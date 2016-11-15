@@ -75,8 +75,8 @@ app.router.add_route('GET', '/samples/{sample_id}/maximum-yield', sample_maximum
 app.router.add_route('GET', '/experiments/{experiment_id}/maximum-yield', experiment_maximum_yields)
 app.router.add_route('GET', '/samples/{sample_id}/model', sample_model)
 app.router.add_route('GET', '/strains/{sample_id}/model', sample_model)  # TODO: deprecate
-app.router.add_route('GET', '/samples/{sample_id}/model/fluxes', sample_model)
-app.router.add_route('GET', '/strains/{sample_id}/model/fluxes', sample_model)  # TODO: deprecate
+app.router.add_route('GET', '/samples/{sample_id}/model/fluxes', sample_fluxes)
+app.router.add_route('GET', '/strains/{sample_id}/model/fluxes', sample_fluxes)  # TODO: deprecate
 
 
 # Configure default CORS settings.
