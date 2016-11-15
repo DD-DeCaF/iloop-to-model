@@ -199,10 +199,12 @@ async def theoretical_maximum_yield_for_phase(sample, scalars):
     :return: dict
     """
     growth_rate = list(filter(lambda x: x['test']['type'] == 'growth-rate', scalars))[0]
-    message = message_for_adjust(sample)  # no scalars information applied for tmy, variation is the goal
+    message = message_for_adjust(sample, scalars)
     compound_ids = [m['id'] for m in message['measurements']]
     model_id = sample_model_id(sample)
-    tmy_modified = await tmy(model_id, message, compound_ids)
+    modified_message = deepcopy(message)
+    modified_message[MEASUREMENTS] = []  # no scalars information applied for tmy, variation is the goal
+    tmy_modified = await tmy(model_id, modified_message, compound_ids)
     tmy_wild_type = await tmy(model_id, {}, compound_ids)
     result = {
         'growth-rate': growth_rate['measurements'],
