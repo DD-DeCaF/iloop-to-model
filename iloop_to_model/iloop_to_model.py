@@ -215,8 +215,10 @@ async def theoretical_maximum_yield_for_phase(sample, scalars):
     measurements = extract_measurements_for_phase(scalars)
     compound_ids = [m['id'] for m in measurements]
     model_id = sample_model_id(sample)
-    tmy_modified = await tmy(model_id, message_for_adjust(sample), compound_ids)
-    tmy_wild_type = await tmy(model_id, {}, compound_ids)
+    tmy_modified, tmy_wild_type = await asyncio.gather(*[
+        tmy(model_id, message_for_adjust(sample), compound_ids),
+        tmy(model_id, {}, compound_ids)
+    ])
     result = {
         'growth-rate': growth_rate['measurements'],
         'metabolites': {}
