@@ -16,7 +16,7 @@ def test_formula_weight():
     assert almost_equal(formula_weight(42758), 180.15588)
 
 
-Sample = namedtuple('Sample', ['strain', 'medium', 'feed_medium', 'read_scalars'])
+Sample = namedtuple('Sample', ['strain', 'medium', 'feed_medium', 'read_scalars', 'name'])
 Strain = namedtuple('Strain', ['organism', 'parent_strain', 'genotype'])
 Medium = namedtuple('Medium', ['read_contents'])
 Product = namedtuple('Product', ['chebi_id', 'chebi_name'])
@@ -57,7 +57,7 @@ scalars = [{'measurements': [0.0, 0.0],
                      'numerator': None,
                      'rate': 'h',
                      'type': 'growth-rate'}}]
-sample = Sample(strain, medium, medium, lambda: scalars)
+sample = Sample(strain, medium, medium, lambda: scalars, 'S1')
 
 
 def test_message_for_adjust():

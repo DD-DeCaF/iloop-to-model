@@ -5,6 +5,7 @@ import aiohttp
 import asyncio
 from bioservices import ChEBI
 from iloop_to_model.settings import Default
+from iloop_to_model import logger
 
 
 def genotype_change(strain):
@@ -57,7 +58,10 @@ def convert_mg_to_mmol(mg, formula_weight):
 
 
 def formula_weight(chebi_id):
-    return float(ChEBI().getCompleteEntity(chebi_id).mass)
+    logger.info('Calling for average mass for chebi id {}'.format(chebi_id))
+    result = float(ChEBI().getCompleteEntity(chebi_id).mass)
+    logger.info('Got average mass for chebi id {}'.format(chebi_id))
+    return result
 
 
 # TODO: make use of other types of scalars (yield, carbon yield, concentration, carbon balance, electron balance)
@@ -81,7 +85,7 @@ def extract_measurements_for_phase(scalars):
             measurement = convert_mg_to_mmol(measurement, formula_weight(product.chebi_id))
         result.append(dict(
             id='chebi:' + str(product.chebi_id),
-            name='chebi:' + str(product.chebi_name),
+            name=product.chebi_name,
             measurement=sign * measurement,
         ))
     return result
@@ -109,10 +113,16 @@ def message_for_adjust(sample, scalars=None):
     :param scalars: scalars for particular phase
     :return: dict
     """
+    genotype_changes = extract_genotype_changes(sample.strain)
+    logger.info('Genotype changes for sample {} are ready'.format(sample.name))
+    medium = extract_medium(sample.medium) + extract_medium(sample.feed_medium)
+    logger.info('Medium for sample {} are ready'.format(sample.name))
+    measurements = extract_measurements_for_phase(scalars) if scalars else []
+    logger.info('Measurements for sample {} are ready'.format(sample.name))
     return {
-        GENOTYPE_CHANGES: extract_genotype_changes(sample.strain),
-        MEDIUM: extract_medium(sample.medium) + extract_medium(sample.feed_medium),
-        MEASUREMENTS: extract_measurements_for_phase(scalars) if scalars else [],
+        GENOTYPE_CHANGES: genotype_changes,
+        MEDIUM: medium,
+        MEASUREMENTS: measurements,
     }
 
 
@@ -188,6 +198,7 @@ async def theoretical_maximum_yields_for_sample(sample):
     result = await asyncio.gather(*[theoretical_maximum_yield_for_phase(sample, scalars)
                                     for phase, scalars in phase_items])
     phases = [p for p, _ in phase_items]
+    logger.info('Theoretical maximum yields for sample {} are ready'.format(sample.name))
     return dict(zip(phases, result))
 
 
@@ -199,18 +210,16 @@ async def theoretical_maximum_yield_for_phase(sample, scalars):
     :return: dict
     """
     growth_rate = list(filter(lambda x: x['test']['type'] == 'growth-rate', scalars))[0]
-    message = message_for_adjust(sample, scalars)
-    compound_ids = [m['id'] for m in message['measurements']]
+    measurements = extract_measurements_for_phase(scalars)
+    compound_ids = [m['id'] for m in measurements]
     model_id = sample_model_id(sample)
-    modified_message = deepcopy(message)
-    modified_message[MEASUREMENTS] = []  # no scalars information applied for tmy, variation is the goal
-    tmy_modified = await tmy(model_id, modified_message, compound_ids)
+    tmy_modified = await tmy(model_id, message_for_adjust(sample), compound_ids)
     tmy_wild_type = await tmy(model_id, {}, compound_ids)
     result = {
         'growth-rate': growth_rate['measurements'],
         'metabolites': {}
     }
-    for compound in message['measurements']:
+    for compound in measurements:
         result['metabolites'][compound['name']] = {
             'flux': compound['measurement'],
             'phase-planes': {
