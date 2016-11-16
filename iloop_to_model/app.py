@@ -4,7 +4,7 @@ import aiohttp_cors
 from aiohttp import web
 from iloop_to_model import iloop_client, logger
 from iloop_to_model.settings import Default
-from iloop_to_model.iloop_to_model import theoretical_maximum_yields_for_sample, fluxes_for_sample, model_for_sample
+from iloop_to_model.iloop_to_model import theoretical_maximum_yields_for_sample, fluxes_for_sample, model_for_sample, phases_for_sample
 
 
 iloop = iloop_client(Default.ILOOP_API, Default.ILOOP_TOKEN)
@@ -41,6 +41,11 @@ async def list_samples(request):
         return web.HTTPForbidden()
 
 
+async def list_phases(request):
+    sample = entity_or_none(iloop.Sample(request.match_info['sample_id']))
+    return await response_or_forbidden(sample, phases_for_sample)
+
+
 async def sample_maximum_yields(request):
     sample = entity_or_none(iloop.Sample(request.match_info['sample_id']))
     return await response_or_forbidden(sample, theoretical_maximum_yields_for_sample)
@@ -71,6 +76,7 @@ app = web.Application()
 app.router.add_route('GET', '/experiments', list_experiments)
 app.router.add_route('GET', '/experiments/{experiment_id}/samples', list_samples)
 app.router.add_route('GET', '/experiments/{experiment_id}/strains', list_samples)  # TODO: deprecate
+app.router.add_route('GET', '/samples/{sample_id}/phases', list_phases)
 app.router.add_route('GET', '/samples/{sample_id}/maximum-yield', sample_maximum_yields)
 app.router.add_route('GET', '/experiments/{experiment_id}/maximum-yield', experiment_maximum_yields)
 app.router.add_route('GET', '/samples/{sample_id}/model', sample_model)

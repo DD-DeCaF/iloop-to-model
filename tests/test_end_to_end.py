@@ -26,6 +26,7 @@ class TestUM:
             '/samples/{}/maximum-yield'.format(mapping['sample'].id),
             '/samples/{}/model'.format(mapping['sample'].id),
             '/samples/{}/model/fluxes'.format(mapping['sample'].id),
+            '/samples/{}/phases'.format(mapping['sample'].id),
         ]
 
     def test_public(self):

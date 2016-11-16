@@ -3,7 +3,6 @@ from collections import defaultdict
 from copy import deepcopy
 import aiohttp
 import asyncio
-from bioservices import ChEBI
 from iloop_to_model.settings import Default
 from iloop_to_model import logger
 
@@ -53,15 +52,12 @@ def scalars_by_phases(sample):
     return phases
 
 
-def convert_mg_to_mmol(mg, formula_weight):
-    return mg * (1/formula_weight)
+def phase_name(phase):
+    return '{} ({} - {} hours)'.format(phase.title, phase.start, phase.end)
 
 
-def formula_weight(chebi_id):
-    logger.info('Calling for average mass for chebi id {}'.format(chebi_id))
-    result = float(ChEBI().getCompleteEntity(chebi_id).mass)
-    logger.info('Got average mass for chebi id {}'.format(chebi_id))
-    return result
+async def phases_for_sample(sample):
+    return [dict(id=k, name=phase_name(v[0]['phase'])) for k, v in scalars_by_phases(sample).items()]
 
 
 # TODO: make use of other types of scalars (yield, carbon yield, concentration, carbon balance, electron balance)
@@ -81,12 +77,11 @@ def extract_measurements_for_phase(scalars):
         measurement = sum(scalar['measurements'])/len(scalar['measurements'])
         sign = -1 if scalar['test']['type'] == 'uptake-rate' else 1
         product = scalar['test']['numerator']['compounds'][0]
-        if scalar['test']['numerator']['unit'] == 'mg':
-            measurement = convert_mg_to_mmol(measurement, formula_weight(product.chebi_id))
         result.append(dict(
             id='chebi:' + str(product.chebi_id),
             name=product.chebi_name,
             measurement=sign * measurement,
+            unit=scalar['test']['numerator']['unit'],
         ))
     return result
 
@@ -169,8 +164,20 @@ async def fluxes(model_id, adjust_message):
     return await _call_with_return(model_id, adjust_message, return_message, FLUXES)
 
 
+async def _gather_for_phases(sample, function):
+    phase_items = list(scalars_by_phases(sample).items())
+    result = await asyncio.gather(*[function(sample, scalars)
+                                    for phase, scalars in phase_items])
+    phases = [p for p, _ in phase_items]
+    return dict(zip(phases, result))
+
+
 async def fluxes_for_sample(sample):
-    return await fluxes(sample_model_id(sample), message_for_adjust(sample))
+    return await _gather_for_phases(sample, fluxes_for_phase)
+
+
+async def fluxes_for_phase(sample, scalars):
+    return await fluxes(sample_model_id(sample), message_for_adjust(sample, scalars))
 
 
 async def tmy(model_id, adjust_message, objectives):
@@ -194,12 +201,7 @@ async def theoretical_maximum_yields_for_sample(sample):
     :param sample: ILoop sample object
     :return: dict
     """
-    phase_items = list(scalars_by_phases(sample).items())
-    result = await asyncio.gather(*[theoretical_maximum_yield_for_phase(sample, scalars)
-                                    for phase, scalars in phase_items])
-    phases = [p for p, _ in phase_items]
-    logger.info('Theoretical maximum yields for sample {} are ready'.format(sample.name))
-    return dict(zip(phases, result))
+    return await _gather_for_phases(sample, theoretical_maximum_yield_for_phase)
 
 
 async def theoretical_maximum_yield_for_phase(sample, scalars):

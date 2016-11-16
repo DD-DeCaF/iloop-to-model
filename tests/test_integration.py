@@ -6,7 +6,7 @@ from iloop_to_model.iloop_to_model import make_request, tmy, fluxes, model_json
 async def test_make_request_to_model_service():
     keys = ['model', 'fluxes']
     r = await make_request('iJO1366', {'to-return': keys})
-    assert set(r.keys()) == set(keys)
+    assert set(r.keys()) == set(keys + ['model-id'])
 
 
 @pytest.mark.asyncio
