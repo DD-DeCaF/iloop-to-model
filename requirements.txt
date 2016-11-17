@@ -2,7 +2,6 @@ aiohttp
 aiozmq
 aiohttp_cors
 msgpack-python
-swiglpk==1.2.14
 potion_client
 requests
 redis

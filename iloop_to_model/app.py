@@ -4,7 +4,8 @@ import aiohttp_cors
 from aiohttp import web
 from iloop_to_model import iloop_client, logger
 from iloop_to_model.settings import Default
-from iloop_to_model.iloop_to_model import theoretical_maximum_yields_for_sample, fluxes_for_sample, model_for_sample, phases_for_sample
+from iloop_to_model.iloop_to_model import theoretical_maximum_yields_for_sample, fluxes_for_sample, model_for_sample, \
+    phases_for_sample, scalars_by_phases, fluxes_for_phase
 
 
 iloop = iloop_client(Default.ILOOP_API, Default.ILOOP_TOKEN)
@@ -63,13 +64,20 @@ async def experiment_maximum_yields(request):
 
 
 async def sample_model(request):
-    strain = entity_or_none(iloop.Sample(request.match_info['sample_id']))
-    return await response_or_forbidden(strain, model_for_sample)
+    sample = entity_or_none(iloop.Sample(request.match_info['sample_id']))
+    return await response_or_forbidden(sample, model_for_sample)
 
 
 async def sample_fluxes(request):
-    strain = entity_or_none(iloop.Sample(request.match_info['sample_id']))
-    return await response_or_forbidden(strain, fluxes_for_sample)
+    sample = entity_or_none(iloop.Sample(request.match_info['sample_id']))
+    if 'phase-id' in request.GET:
+
+        async def phase_fluxes(s):
+            scalars = scalars_by_phases(sample)
+            return await fluxes_for_phase(s, scalars[int(request.GET['phase-id'])])
+
+        return await response_or_forbidden(sample, phase_fluxes)
+    return await response_or_forbidden(sample, fluxes_for_sample)
 
 
 app = web.Application()

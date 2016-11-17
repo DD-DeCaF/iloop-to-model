@@ -148,7 +148,7 @@ async def _call_with_return(model_id, adjust_message, return_message, key):
     message = deepcopy(adjust_message)
     message.update(return_message)
     result = await make_request(model_id, message)
-    return result[key]
+    return {'model-id': result['model-id'], key: result[key]}
 
 
 async def fluxes(model_id, adjust_message):
@@ -227,8 +227,8 @@ async def theoretical_maximum_yield_for_phase(sample, scalars):
         result['metabolites'][compound['name']] = {
             'flux': compound['measurement'],
             'phase-planes': {
-                'modified': tmy_modified[compound['id']],
-                'wild': tmy_wild_type[compound['id']],
+                'modified': tmy_modified['tmy'][compound['id']],
+                'wild': tmy_wild_type['tmy'][compound['id']],
             }
         }
     return result

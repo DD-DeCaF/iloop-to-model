@@ -13,7 +13,7 @@ async def test_make_request_to_model_service():
 async def test_tmy():
     objectives = ['chebi:42758']
     result = await tmy('iJO1366', {}, objectives)
-    assert set(result.keys()) == set(objectives)
+    assert set(result['tmy'].keys()) == set(objectives)
 
 
 @pytest.mark.asyncio
