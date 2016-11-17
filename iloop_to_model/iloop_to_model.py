@@ -247,5 +247,9 @@ async def model_json(model_id, adjust_message):
     return await _call_with_return(model_id, adjust_message, return_message, MODEL)
 
 
+async def model_for_phase(sample, scalars):
+    return await model_json(sample_model_id(sample), message_for_adjust(sample, scalars))
+
+
 async def model_for_sample(sample):
-    return await model_json(sample_model_id(sample), message_for_adjust(sample))
+    return await _gather_for_phases(sample, model_for_phase)
