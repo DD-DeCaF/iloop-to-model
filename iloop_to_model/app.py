@@ -4,8 +4,8 @@ import aiohttp_cors
 from aiohttp import web
 from iloop_to_model import iloop_client, logger
 from iloop_to_model.settings import Default
-from iloop_to_model.iloop_to_model import theoretical_maximum_yields_for_sample, fluxes_for_sample, model_for_sample, \
-    phases_for_sample, scalars_by_phases, fluxes_for_phase, model_for_phase
+from iloop_to_model.iloop_to_model import gather_for_phases, scalars_by_phases, \
+    fluxes_for_phase, model_for_phase, theoretical_maximum_yield_for_phase, phases_for_sample
 
 
 iloop = iloop_client(Default.ILOOP_API, Default.ILOOP_TOKEN)
@@ -47,55 +47,42 @@ async def list_phases(request):
     return await response_or_forbidden(sample, phases_for_sample)
 
 
-async def sample_maximum_yields(request):
+async def sample_in_phases(request, function_for_phase):
     sample = entity_or_none(iloop.Sample(request.match_info['sample_id']))
-    return await response_or_forbidden(sample, theoretical_maximum_yields_for_sample)
+
+    async def for_phase(s):
+        scalars = scalars_by_phases(s)
+        return await function_for_phase(s, scalars[int(request.GET['phase-id'])])
+
+    async def for_sample(s):
+        return await gather_for_phases(s, function_for_phase)
+
+    if 'phase-id' in request.GET:
+        return await response_or_forbidden(sample, for_phase)
+    return await response_or_forbidden(sample, for_sample)
 
 
-async def experiment_maximum_yields(request):
-    experiment = entity_or_none(iloop.Experiment(request.match_info['experiment_id']))
-
-    async def samples_for_experiment(e):
-        keys = [s.id for s in e.read_samples()]
-        values = await asyncio.gather(*[theoretical_maximum_yields_for_sample(sample) for sample in e.read_samples()])
-        return dict(zip(keys, values))
-
-    return await response_or_forbidden(experiment, samples_for_experiment)
-
-
-async def sample_in_phases(sample, phase_id, function):
-    async def phase(s):
-        scalars = scalars_by_phases(sample)
-        return await function(s, scalars[phase_id])
-
-    return await response_or_forbidden(sample, phase)
+async def sample_maximum_yields(request):
+    return await sample_in_phases(request, theoretical_maximum_yield_for_phase)
 
 
 async def sample_model(request):
-    sample = entity_or_none(iloop.Sample(request.match_info['sample_id']))
-    if 'phase-id' in request.GET:
-        return await sample_in_phases(sample, int(request.GET['phase-id']), model_for_phase)
-    return await response_or_forbidden(sample, model_for_sample)
+    return await sample_in_phases(request, model_for_phase)
 
 
 async def sample_fluxes(request):
-    sample = entity_or_none(iloop.Sample(request.match_info['sample_id']))
-    if 'phase-id' in request.GET:
-        return await sample_in_phases(sample, int(request.GET['phase-id']), fluxes_for_phase)
-    return await response_or_forbidden(sample, fluxes_for_sample)
+    return await sample_in_phases(request, fluxes_for_phase)
 
 
 app = web.Application()
+# List entities
 app.router.add_route('GET', '/experiments', list_experiments)
 app.router.add_route('GET', '/experiments/{experiment_id}/samples', list_samples)
-app.router.add_route('GET', '/experiments/{experiment_id}/strains', list_samples)  # TODO: deprecate
 app.router.add_route('GET', '/samples/{sample_id}/phases', list_phases)
+# Make calculations
 app.router.add_route('GET', '/samples/{sample_id}/maximum-yield', sample_maximum_yields)
-app.router.add_route('GET', '/experiments/{experiment_id}/maximum-yield', experiment_maximum_yields)
 app.router.add_route('GET', '/samples/{sample_id}/model', sample_model)
-app.router.add_route('GET', '/strains/{sample_id}/model', sample_model)  # TODO: deprecate
-app.router.add_route('GET', '/samples/{sample_id}/model/fluxes', sample_fluxes)
-app.router.add_route('GET', '/strains/{sample_id}/model/fluxes', sample_fluxes)  # TODO: deprecate
+app.router.add_route('GET', '/samples/{sample_id}/fluxes', sample_fluxes)
 
 
 # Configure default CORS settings.

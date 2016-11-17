@@ -164,7 +164,7 @@ async def fluxes(model_id, adjust_message):
     return await _call_with_return(model_id, adjust_message, return_message, FLUXES)
 
 
-async def _gather_for_phases(sample, function):
+async def gather_for_phases(sample, function):
     phase_items = list(scalars_by_phases(sample).items())
     result = await asyncio.gather(*[function(sample, scalars)
                                     for phase, scalars in phase_items])
@@ -173,7 +173,7 @@ async def _gather_for_phases(sample, function):
 
 
 async def fluxes_for_sample(sample):
-    return await _gather_for_phases(sample, fluxes_for_phase)
+    return await gather_for_phases(sample, fluxes_for_phase)
 
 
 async def fluxes_for_phase(sample, scalars):
