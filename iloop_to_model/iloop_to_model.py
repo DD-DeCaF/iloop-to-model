@@ -136,7 +136,7 @@ async def make_request(model_id, message):
             return await r.json()
 
 
-async def _call_with_return(model_id, adjust_message, return_message, key):
+async def _call_with_return(model_id, adjust_message, return_message):
     """Helper function for calling model service
 
     :param model_id: str
@@ -147,8 +147,13 @@ async def _call_with_return(model_id, adjust_message, return_message, key):
     """
     message = deepcopy(adjust_message)
     message.update(return_message)
-    result = await make_request(model_id, message)
-    return {'model-id': result['model-id'], key: result[key]}
+    call_result = await make_request(model_id, message)
+    result = {
+        'model-id': call_result['model-id'],
+    }
+    for key in return_message['to-return']:
+        result[key] = call_result[key]
+    return result
 
 
 async def fluxes(model_id, adjust_message):
@@ -161,7 +166,7 @@ async def fluxes(model_id, adjust_message):
     return_message = {
         'to-return': [FLUXES]
     }
-    return await _call_with_return(model_id, adjust_message, return_message, FLUXES)
+    return await _call_with_return(model_id, adjust_message, return_message)
 
 
 async def gather_for_phases(sample, function):
@@ -192,7 +197,7 @@ async def tmy(model_id, adjust_message, objectives):
         'to-return': [TMY],
         OBJECTIVES: objectives,
     }
-    return await _call_with_return(model_id, adjust_message, return_message, TMY)
+    return await _call_with_return(model_id, adjust_message, return_message)
 
 
 async def theoretical_maximum_yields_for_sample(sample):
@@ -201,7 +206,7 @@ async def theoretical_maximum_yields_for_sample(sample):
     :param sample: ILoop sample object
     :return: dict
     """
-    return await _gather_for_phases(sample, theoretical_maximum_yield_for_phase)
+    return await gather_for_phases(sample, theoretical_maximum_yield_for_phase)
 
 
 async def theoretical_maximum_yield_for_phase(sample, scalars):
@@ -234,22 +239,23 @@ async def theoretical_maximum_yield_for_phase(sample, scalars):
     return result
 
 
-async def model_json(model_id, adjust_message):
-    """Get serialized model for given model id and adjustment message
+async def model_json(model_id, adjust_message, with_fluxes=True):
+    """Get serialized model for given model id and adjustment message. Also returns fluxes by default
 
     :param model_id: str
     :param adjust_message: dict
+    :param with_fluxes: bool
     :return: model as dict
     """
     return_message = {
-        'to-return': [MODEL],
+        'to-return': [MODEL, FLUXES] if with_fluxes else [MODEL],
     }
-    return await _call_with_return(model_id, adjust_message, return_message, MODEL)
+    return await _call_with_return(model_id, adjust_message, return_message)
 
 
-async def model_for_phase(sample, scalars):
-    return await model_json(sample_model_id(sample), message_for_adjust(sample, scalars))
+async def model_for_phase(sample, scalars, with_fluxes=True):
+    return await model_json(sample_model_id(sample), message_for_adjust(sample, scalars), with_fluxes=with_fluxes)
 
 
-async def model_for_sample(sample):
-    return await _gather_for_phases(sample, model_for_phase)
+async def model_for_sample(sample, with_fluxes=True):
+    return await gather_for_phases(sample, lambda x, y: model_for_phase(x, y, with_fluxes=with_fluxes))

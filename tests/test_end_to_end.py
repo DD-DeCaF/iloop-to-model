@@ -23,7 +23,7 @@ class TestUM:
     def get_urls(self, mapping):
         return [
             '/samples/{}/maximum-yield'.format(mapping['sample'].id),
-            '/samples/{}/model'.format(mapping['sample'].id),
+            '/samples/{}/model?phase-id=1&with-fluxes=1'.format(mapping['sample'].id),
             '/samples/{}/fluxes'.format(mapping['sample'].id),
             '/samples/{}/phases'.format(mapping['sample'].id),
         ]

@@ -67,7 +67,8 @@ async def sample_maximum_yields(request):
 
 
 async def sample_model(request):
-    return await sample_in_phases(request, model_for_phase)
+    with_fluxes = 'with-fluxes' in request.GET and request.GET['with-fluxes'] == '1'
+    return await sample_in_phases(request, lambda x, y: model_for_phase(x, y, with_fluxes=with_fluxes))
 
 
 async def sample_fluxes(request):
