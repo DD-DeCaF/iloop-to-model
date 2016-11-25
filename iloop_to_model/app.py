@@ -5,7 +5,7 @@ from aiohttp import web
 from iloop_to_model import iloop_client, logger
 from iloop_to_model.settings import Default
 from iloop_to_model.iloop_to_model import gather_for_phases, scalars_by_phases, \
-    fluxes_for_phase, model_for_phase, theoretical_maximum_yield_for_phase, phases_for_sample
+    fluxes_for_phase, model_for_phase, theoretical_maximum_yield_for_phase, phases_for_sample, info_for_sample
 
 
 iloop = iloop_client(Default.ILOOP_API, Default.ILOOP_TOKEN)
@@ -75,6 +75,10 @@ async def sample_fluxes(request):
     return await sample_in_phases(request, fluxes_for_phase)
 
 
+async def sample_info(request):
+    return await sample_in_phases(request, info_for_sample)
+
+
 app = web.Application()
 # List entities
 app.router.add_route('GET', '/experiments', list_experiments)
@@ -84,6 +88,7 @@ app.router.add_route('GET', '/samples/{sample_id}/phases', list_phases)
 app.router.add_route('GET', '/samples/{sample_id}/maximum-yield', sample_maximum_yields)
 app.router.add_route('GET', '/samples/{sample_id}/model', sample_model)
 app.router.add_route('GET', '/samples/{sample_id}/fluxes', sample_fluxes)
+app.router.add_route('GET', '/samples/{sample_id}/info', sample_info)
 
 
 # Configure default CORS settings.

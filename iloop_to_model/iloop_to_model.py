@@ -259,3 +259,7 @@ async def model_for_phase(sample, scalars, with_fluxes=True):
 
 async def model_for_sample(sample, with_fluxes=True):
     return await gather_for_phases(sample, lambda x, y: model_for_phase(x, y, with_fluxes=with_fluxes))
+
+
+async def info_for_sample(sample, scalars):
+    return message_for_adjust(sample, scalars)
