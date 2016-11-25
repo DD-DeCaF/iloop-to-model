@@ -36,6 +36,7 @@ def extract_medium(medium):
     """
     return [{
                 'id': 'chebi:' + str(compound['compound'].chebi_id),
+                'name': compound['compound'].chebi_name,
                 'concentration': compound['concentration']
             } for compound in medium.read_contents()]
 
