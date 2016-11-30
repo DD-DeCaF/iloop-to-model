@@ -28,6 +28,10 @@ async def response_or_forbidden(entity, get_result, dumps=json.dumps):
         return web.HTTPForbidden()
 
 
+async def list_species(request):
+    return web.json_response(Default.ORGANISM_TO_MODEL)
+
+
 async def list_experiments(request):
     experiments = iloop.Experiment.instances(where=dict(type='fermentation'))
     return web.json_response([dict(id=experiment.id, name=experiment.identifier) for experiment in experiments
@@ -37,7 +41,11 @@ async def list_experiments(request):
 async def list_samples(request):
     experiment = entity_or_none(iloop.Experiment(request.match_info['experiment_id']))
     if experiment:
-        return web.json_response([dict(id=sample.id, name=sample.name) for sample in experiment.read_samples()])
+        return web.json_response([dict(
+            id=sample.id,
+            name=sample.name,
+            organism=sample.strain.organism.short_code
+        ) for sample in experiment.read_samples()])
     else:
         return web.HTTPForbidden()
 
@@ -81,6 +89,7 @@ async def sample_info(request):
 
 app = web.Application()
 # List entities
+app.router.add_route('GET', '/species', list_species)
 app.router.add_route('GET', '/experiments', list_experiments)
 app.router.add_route('GET', '/experiments/{experiment_id}/samples', list_samples)
 app.router.add_route('GET', '/samples/{sample_id}/phases', list_phases)
