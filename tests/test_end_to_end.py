@@ -1,5 +1,4 @@
 import requests
-import pytest
 from iloop_to_model import iloop_client
 from iloop_to_model.settings import Default
 
@@ -28,14 +27,9 @@ class TestUM:
             '/samples/{}/phases'.format(mapping['sample'].id),
         ]
 
-    def test_public(self):
+    def test_request(self):
         for url in self.get_urls(self.public):
-            r = requests.get(self.api + url)
+            r = requests.get(self.api + url, headers={
+                'Authorization': 'Bearer {}'.format(Default.ILOOP_TOKEN)
+            })
             r.raise_for_status()
-
-    def test_not_public(self):
-        for url in self.get_urls(self.not_public):
-            r = requests.get(self.api + url)
-            assert r.status_code == 403
-            with pytest.raises(requests.exceptions.HTTPError):
-                r.raise_for_status()
