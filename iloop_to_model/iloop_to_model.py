@@ -131,7 +131,7 @@ async def make_request(model_id, message):
     """
     async with aiohttp.ClientSession() as session:
         async with session.post(
-                'http://api.dd-decaf.eu/models/{}'.format(model_id),
+                'https://api.dd-decaf.eu/models/{}'.format(model_id),
                 data=json.dumps({'message': message})
         ) as r:
             return await r.json()
