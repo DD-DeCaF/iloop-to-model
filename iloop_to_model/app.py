@@ -11,7 +11,9 @@ from iloop_to_model.iloop_to_model import gather_for_phases, scalars_by_phases, 
 def call_iloop_with_token(f):
     @wraps(f)
     async def wrapper(request):
-        token = request.headers['Authorization'].lstrip('Bearer ')
+        token = Default.ILOOP_TOKEN
+        if 'Authorization' in request.headers:
+            token = request.headers['Authorization'].lstrip('Bearer ')
         iloop = iloop_client(Default.ILOOP_API, token)
         return await f(request, iloop)
     return wrapper
