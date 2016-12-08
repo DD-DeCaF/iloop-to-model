@@ -13,7 +13,7 @@ def call_iloop_with_token(f):
     async def wrapper(request):
         token = Default.ILOOP_TOKEN
         if 'Authorization' in request.headers:
-            token = request.headers['Authorization'].lstrip('Bearer ')
+            token = request.headers['Authorization'].replace('Bearer ', '')
         iloop = iloop_client(Default.ILOOP_API, token)
         return await f(request, iloop)
     return wrapper
