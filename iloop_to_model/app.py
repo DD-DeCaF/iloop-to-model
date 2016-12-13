@@ -71,12 +71,14 @@ async def sample_maximum_yields(request, iloop):
 @call_iloop_with_token
 async def sample_model(request, iloop):
     with_fluxes = 'with-fluxes' in request.GET and request.GET['with-fluxes'] == '1'
-    return await sample_in_phases(request, iloop, lambda x, y: model_for_phase(x, y, with_fluxes=with_fluxes))
+    method = request.GET['method'] if 'method' in request.GET else None
+    return await sample_in_phases(request, iloop, lambda x, y: model_for_phase(x, y, with_fluxes=with_fluxes, method=method))
 
 
 @call_iloop_with_token
 async def sample_fluxes(request, iloop):
-    return await sample_in_phases(request, iloop, fluxes_for_phase)
+    method = request.GET['method'] if 'method' in request.GET else None
+    return await sample_in_phases(request, iloop, lambda x, y: fluxes_for_phase(x, y, method=method))
 
 
 @call_iloop_with_token

@@ -13,7 +13,7 @@ class TestUM:
     def test_request(self):
         URLS = [
             '/samples/{}/maximum-yield'.format(self.sample.id),
-            '/samples/{}/model?phase-id=1&with-fluxes=1'.format(self.sample.id),
+            '/samples/{}/model?phase-id=1&with-fluxes=1&method=room'.format(self.sample.id),
             '/samples/{}/fluxes'.format(self.sample.id),
             '/samples/{}/phases'.format(self.sample.id),
         ]
