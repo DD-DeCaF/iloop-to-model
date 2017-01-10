@@ -9,7 +9,7 @@ class Default(object):
         'COG': 'iNJ661',
     }
 
-    NOT_PUBLIC = {'NPC'}
-
     ILOOP_API = os.environ['ILOOP_API']
     ILOOP_TOKEN = os.environ['ILOOP_TOKEN']
+
+    ILOOP_BIOSUSTAIN = 'https://iloop.biosustain.dtu.dk/api'
