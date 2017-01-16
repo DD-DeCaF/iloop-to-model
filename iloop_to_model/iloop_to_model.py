@@ -1,3 +1,4 @@
+import os
 import json
 from collections import defaultdict
 from copy import deepcopy
@@ -129,11 +130,13 @@ async def make_request(model_id, message):
     :param message: dict
     :return: response for the service as dict
     """
+    print(message)
     async with aiohttp.ClientSession() as session:
         async with session.post(
-                'https://api.dd-decaf.eu/models/{}'.format(model_id),
+                '{}{}'.format(os.environ['MODEL_API'], model_id),
                 data=json.dumps({'message': message})
         ) as r:
+            print(r)
             return await r.json()
 
 

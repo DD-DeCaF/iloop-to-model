@@ -8,3 +8,4 @@ web:
     - PYTHONASYNCIODEBUG=1
     - ILOOP_TOKEN
     - ILOOP_API
+    - MODEL_API=https://api.dd-decaf.eu/models/
