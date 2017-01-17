@@ -172,6 +172,8 @@ async def fluxes(model_id, adjust_message, method=None):
     }
     if method:
         return_message['simulation-method'] = method
+    if method == 'fva':
+        return_message['fva-reactions'] = map_reactions_list(Default.MODEL_TO_MAP[model_id])
     return await _call_with_return(model_id, adjust_message, return_message)
 
 
@@ -245,6 +247,16 @@ async def theoretical_maximum_yield_for_phase(sample, scalars):
     return result
 
 
+def map_reactions_list(map_path):
+    """Extract reaction ids from map for FVA optimization
+
+    :param map_path: string
+    :return: list of strings
+    """
+    with open(map_path) as f:
+        return [i['bigg_id'] for i in json.load(f)[1]['reactions'].values()]
+
+
 async def model_json(model_id, adjust_message, with_fluxes=True, method=None):
     """Get serialized model for given model id and adjustment message. Also returns fluxes by default
 
@@ -258,6 +270,8 @@ async def model_json(model_id, adjust_message, with_fluxes=True, method=None):
     }
     if method:
         return_message['simulation-method'] = method
+    if method == 'fva':
+        return_message['fva-reactions'] = map_reactions_list(Default.MODEL_TO_MAP[model_id])
     return await _call_with_return(model_id, adjust_message, return_message)
 
 

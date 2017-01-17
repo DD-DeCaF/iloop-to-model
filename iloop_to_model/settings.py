@@ -9,6 +9,11 @@ class Default(object):
         'COG': 'iNJ661',
     }
 
+    MODEL_TO_MAP = {
+        'iJO1366': 'maps/iJO1366.Central metabolism.json',
+        'iMM904': 'maps/iMM904.Central carbon metabolism.json',
+    }
+
     ILOOP_API = os.environ['ILOOP_API']
     ILOOP_TOKEN = os.environ['ILOOP_TOKEN']
 
