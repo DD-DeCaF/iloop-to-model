@@ -224,7 +224,7 @@ async def theoretical_maximum_yield_for_phase(sample, scalars):
     :param scalars: scalars from ILoop
     :return: dict
     """
-    growth_rate = list(filter(lambda x: x['test']['type'] == 'growth-rate', scalars))[0]
+    growth_rate = next(filter(lambda x: x['test']['type'] == 'growth-rate', scalars), 0)
     measurements = extract_measurements_for_phase(scalars)
     compound_ids = [m['id'] for m in measurements]
     model_id = sample_model_id(sample)

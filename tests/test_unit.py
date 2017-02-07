@@ -39,13 +39,7 @@ scalars = [{'measurements': [0.0, 0.0],
                                    'quantity': 'amount',
                                    'unit': 'mg'},
                      'rate': 'h',
-                     'type': 'uptake-rate'}},
-           {'measurements': [0.15, 0.05],
-            'phase': phase,
-            'test': {'denominator': None,
-                     'numerator': None,
-                     'rate': 'h',
-                     'type': 'growth-rate'}}]
+                     'type': 'uptake-rate'}}]
 sample = Sample(strain, medium, medium, lambda: scalars, 'S1')
 
 
