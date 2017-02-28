@@ -16,7 +16,7 @@ def call_iloop_with_token(f):
             for origin, redirect_api in Default.REDIRECTS.items():
                 if origin in request.headers['Origin']:
                     api = redirect_api
-                token = request.headers['Authorization'].replace('Bearer ', '')
+            token = request.headers['Authorization'].replace('Bearer ', '')
         iloop = iloop_client(api, token)
         return await f(request, iloop)
     return wrapper
