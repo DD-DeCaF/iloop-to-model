@@ -12,11 +12,12 @@ def call_iloop_with_token(f):
     @wraps(f)
     async def wrapper(request):
         api, token = Default.ILOOP_API, Default.ILOOP_TOKEN
-        if 'Authorization' in request.headers and 'Origin' in request.headers:
-            for origin, redirect_api in Default.REDIRECTS.items():
-                if origin in request.headers['Origin']:
-                    api = redirect_api
+        if 'Authorization' in request.headers:
             token = request.headers['Authorization'].replace('Bearer ', '')
+            if 'Origin' in request.headers:
+                for origin, redirect_api in Default.REDIRECTS.items():
+                    if origin in request.headers['Origin']:
+                        api = redirect_api
         iloop = iloop_client(api, token)
         return await f(request, iloop)
     return wrapper
