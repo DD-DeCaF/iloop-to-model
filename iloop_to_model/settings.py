@@ -7,6 +7,7 @@ class Default(object):
         'SCE': 'iMM904',
         'CHO': 'iMM1415',
         'COG': 'iNJ661',
+        'PPU': 'iJN746',
     }
 
     MODEL_TO_MAP = {
