@@ -160,7 +160,7 @@ async def _call_with_return(model_id, adjust_message, return_message):
     return result
 
 
-async def fluxes(model_id, adjust_message, method=None):
+async def fluxes(model_id, adjust_message, method=None, map=None):
     """Get fluxes for given model id and adjustment message
 
     :param model_id: str
@@ -172,8 +172,8 @@ async def fluxes(model_id, adjust_message, method=None):
     }
     if method:
         return_message['simulation-method'] = method
-    if method == 'fva':
-        return_message['fva-reactions'] = map_reactions_list(Default.MODEL_TO_MAP[model_id])
+    if map:
+        return_message['map'] = map
     return await _call_with_return(model_id, adjust_message, return_message)
 
 
@@ -189,8 +189,8 @@ async def fluxes_for_sample(sample):
     return await gather_for_phases(sample, fluxes_for_phase)
 
 
-async def fluxes_for_phase(sample, scalars, method=None):
-    return await fluxes(sample_model_id(sample), message_for_adjust(sample, scalars), method=method)
+async def fluxes_for_phase(sample, scalars, method=None, map=None):
+    return await fluxes(sample_model_id(sample), message_for_adjust(sample, scalars), method=method, map=map)
 
 
 async def tmy(model_id, adjust_message, objectives):
@@ -247,17 +247,7 @@ async def theoretical_maximum_yield_for_phase(sample, scalars):
     return result
 
 
-def map_reactions_list(map_path):
-    """Extract reaction ids from map for FVA optimization
-
-    :param map_path: string
-    :return: list of strings
-    """
-    with open(map_path) as f:
-        return [i['bigg_id'] for i in json.load(f)[1]['reactions'].values()]
-
-
-async def model_json(model_id, adjust_message, with_fluxes=True, method=None):
+async def model_json(model_id, adjust_message, with_fluxes=True, method=None, map=None):
     """Get serialized model for given model id and adjustment message. Also returns fluxes by default
 
     :param model_id: str
@@ -270,17 +260,17 @@ async def model_json(model_id, adjust_message, with_fluxes=True, method=None):
     }
     if method:
         return_message['simulation-method'] = method
-    if method == 'fva':
-        return_message['fva-reactions'] = map_reactions_list(Default.MODEL_TO_MAP[model_id])
+    if map:
+        return_message['map'] = map
     return await _call_with_return(model_id, adjust_message, return_message)
 
 
-async def model_for_phase(sample, scalars, with_fluxes=True, method=None):
-    return await model_json(sample_model_id(sample), message_for_adjust(sample, scalars), with_fluxes=with_fluxes, method=method)
+async def model_for_phase(sample, scalars, with_fluxes=True, method=None, map=None):
+    return await model_json(sample_model_id(sample), message_for_adjust(sample, scalars), with_fluxes=with_fluxes, method=method, map=map)
 
 
-async def model_for_sample(sample, with_fluxes=True, method=None):
-    return await gather_for_phases(sample, lambda x, y: model_for_phase(x, y, with_fluxes=with_fluxes, method=method))
+async def model_for_sample(sample, with_fluxes=True, method=None, map=None):
+    return await gather_for_phases(sample, lambda x, y: model_for_phase(x, y, with_fluxes=with_fluxes, method=method, map=map))
 
 
 async def info_for_sample(sample, scalars):
