@@ -17,14 +17,7 @@ def extract_genotype_changes(strain):
     :param strain: iLoop strain object
     :return: list of strings
     """
-    def inner(strain):
-        lineage = [strain]
-        while strain.parent_strain is not None:
-            strain = strain.parent_strain
-            lineage.insert(0, strain)
-        return lineage
-
-    return list(genotype_change(strain) for strain in inner(strain) if genotype_change(strain))
+    return strain.pool.genotype + strain.pool.full_inherited_genotype
 
 
 def extract_medium(medium):
