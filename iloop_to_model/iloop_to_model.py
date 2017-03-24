@@ -7,24 +7,26 @@ import asyncio
 from iloop_to_model.settings import Default
 from iloop_to_model import logger
 
+def pool_lineage(pool):
+    lineage = [pool]
+    while pool.parent_pool is not None:
+        pool = pool.parent_pool
+        lineage.insert(0, pool)
+    return lineage
 
-def genotype_change(strain):
-    return strain.genotype if strain.genotype else strain.pool.genotype
-
+def strain_lineage(strain):
+    lineage = [strain]
+    while strain.parent_strain is not None:
+        strain = strain.parent_strain
+        lineage.insert(0, strain)
+    return pool_lineage(strain.pool) + lineage
 
 def extract_genotype_changes(strain):
     """Get list of strings containing information about Genotype changes in Gnomic definition language
     :param strain: iLoop strain object
     :return: list of strings
     """
-    def inner(strain):
-        lineage = [strain]
-        while strain.parent_strain is not None:
-            strain = strain.parent_strain
-            lineage.insert(0, strain)
-        return lineage
-
-    return list(genotype_change(strain) for strain in inner(strain) if genotype_change(strain))
+    return list(strain.genotype for strain in strain_lineage(strain) if strain.genotype)
 
 
 def extract_medium(medium):
