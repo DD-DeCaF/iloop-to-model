@@ -9,3 +9,4 @@ web:
     - ILOOP_TOKEN
     - ILOOP_API
     - MODEL_API=https://api.dd-decaf.eu/models/
+  command: ["-w", "1", "-b", "0.0.0.0:7000", "-t", "150", "-k", "aiohttp.worker.GunicornWebWorker", "iloop_to_model.app:app"]
