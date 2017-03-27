@@ -3,6 +3,8 @@ language: python
 services:
 - docker
 before_install:
+- sudo apt-get install procps
+- while sleep 3; do top -b -n 1 | head -n 30; done &
 - docker login -e=$DOCKER_EMAIL -u=$DOCKER_USERNAME -p=$DOCKER_PASSWORD
 install: docker-compose up -d
 script:
