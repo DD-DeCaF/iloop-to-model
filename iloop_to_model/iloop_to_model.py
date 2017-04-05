@@ -7,6 +7,7 @@ import asyncio
 from iloop_to_model.settings import Default
 from iloop_to_model import logger
 
+
 def pool_lineage(pool):
     lineage = [pool]
     while pool.parent_pool is not None:
@@ -14,12 +15,15 @@ def pool_lineage(pool):
         lineage.insert(0, pool)
     return lineage
 
+
 def strain_lineage(strain):
     lineage = [strain]
+    pool_lineage_for_strain = pool_lineage(strain.pool)
     while strain.parent_strain is not None:
         strain = strain.parent_strain
         lineage.insert(0, strain)
-    return pool_lineage(strain.pool) + lineage
+    return pool_lineage_for_strain + lineage
+
 
 def extract_genotype_changes(strain):
     """Get list of strings containing information about Genotype changes in Gnomic definition language
@@ -78,7 +82,7 @@ def extract_measurements_for_phase(scalars):
     )
     result = []
     for scalar in scalars_yield:
-        measurement = sum(scalar['measurements'])/len(scalar['measurements'])
+        measurement = sum(scalar['measurements']) / len(scalar['measurements'])
         sign = -1 if scalar['test']['type'] == 'uptake-rate' else 1
         product = scalar['test']['numerator']['compounds'][0]
         result.append(dict(
@@ -268,11 +272,13 @@ async def model_json(model_id, adjust_message, with_fluxes=True, method=None, ma
 
 
 async def model_for_phase(sample, scalars, with_fluxes=True, method=None, map=None):
-    return await model_json(sample_model_id(sample), message_for_adjust(sample, scalars), with_fluxes=with_fluxes, method=method, map=map)
+    return await model_json(sample_model_id(sample), message_for_adjust(sample, scalars), with_fluxes=with_fluxes,
+                            method=method, map=map)
 
 
 async def model_for_sample(sample, with_fluxes=True, method=None, map=None):
-    return await gather_for_phases(sample, lambda x, y: model_for_phase(x, y, with_fluxes=with_fluxes, method=method, map=map))
+    return await gather_for_phases(sample,
+                                   lambda x, y: model_for_phase(x, y, with_fluxes=with_fluxes, method=method, map=map))
 
 
 async def info_for_sample(sample, scalars):
