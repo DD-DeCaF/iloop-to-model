@@ -72,7 +72,7 @@ async def phases_for_sample(sample):
 def extract_measurements_for_phase(scalars):
     """Convert scalars to simplified dictionary. Returns only uptake and production rates.
 
-    :param sample: scalars dictionary
+    :param scalars: scalars dictionary
     :return: list of dictionaries of format
              {'id': <metabolite id (<database>:<id>, f.e. chebi:12345)>, 'measurement': <measurement (float)>}
     """
@@ -129,6 +129,26 @@ def message_for_adjust(sample, scalars=None):
     }
 
 
+ILOOP_SPECIES_TO_TAXON = {
+    'ECO': 'ECOLX',
+    'SCE': 'YEAST',
+    'CHO': 'CRIGR',
+    'PPU': 'PSEPU',
+    'COG': 'CORGT'
+}
+
+async def model_options_for_sample(sample):
+    """Get the possible models for a given species.
+
+    :param sample: ILoop sample object
+    """
+    species = ILOOP_SPECIES_TO_TAXON[sample.strain.organism.short_code]
+    url = '{}/model-options/{}'.format(os.environ['MODEL_API'], species)
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url) as r:
+            return await r.json()
+
+
 async def make_request(model_id, message):
     """Make asynchronous call to model service
 
@@ -139,7 +159,7 @@ async def make_request(model_id, message):
     print(message)
     async with aiohttp.ClientSession() as session:
         async with session.post(
-                '{}{}'.format(os.environ['MODEL_API'], model_id),
+                '{}/models/{}'.format(os.environ['MODEL_API'], model_id),
                 data=json.dumps({'message': message})
         ) as r:
             print(r)
@@ -152,7 +172,6 @@ async def _call_with_return(model_id, adjust_message, return_message):
     :param model_id: str
     :param adjust_message: dict
     :param return_message: dict
-    :param key: str
     :return: dict
     """
     message = deepcopy(adjust_message)
@@ -195,8 +214,10 @@ async def fluxes_for_sample(sample):
     return await gather_for_phases(sample, fluxes_for_phase)
 
 
-async def fluxes_for_phase(sample, scalars, method=None, map=None):
-    return await fluxes(sample_model_id(sample), message_for_adjust(sample, scalars), method=method, map=map)
+async def fluxes_for_phase(sample, scalars, method=None, map=None, model_id=None):
+    if model_id is None:
+        model_id = sample_model_id(sample)
+    return await fluxes(model_id, message_for_adjust(sample, scalars), method=method, map=map)
 
 
 async def tmy(model_id, adjust_message, objectives):
@@ -223,17 +244,19 @@ async def theoretical_maximum_yields_for_sample(sample):
     return await gather_for_phases(sample, theoretical_maximum_yield_for_phase)
 
 
-async def theoretical_maximum_yield_for_phase(sample, scalars):
+async def theoretical_maximum_yield_for_phase(sample, scalars, model_id=None):
     """Get theoretical maximum yields for phase scalars, with growth rates and measurements, both for modified and wild type
 
     :param sample: ILoop sample object
     :param scalars: scalars from ILoop
+    :param model_id: The model to use, e.g. iJO1366
     :return: dict
     """
+    if model_id is None:
+        model_id = sample_model_id(sample)
     growth_rate = next(filter(lambda x: x['test']['type'] == 'growth-rate', scalars), dict(measurements=[0]))
     measurements = extract_measurements_for_phase(scalars)
     compound_ids = [m['id'] for m in measurements]
-    model_id = sample_model_id(sample)
     tmy_modified, tmy_wild_type = await asyncio.gather(*[
         tmy(model_id, message_for_adjust(sample), compound_ids),
         tmy(model_id, {}, compound_ids)
@@ -271,9 +294,10 @@ async def model_json(model_id, adjust_message, with_fluxes=True, method=None, ma
     return await _call_with_return(model_id, adjust_message, return_message)
 
 
-async def model_for_phase(sample, scalars, with_fluxes=True, method=None, map=None):
-    return await model_json(sample_model_id(sample), message_for_adjust(sample, scalars), with_fluxes=with_fluxes,
-                            method=method, map=map)
+async def model_for_phase(sample, scalars, with_fluxes=True, method=None, map=None, model_id=None):
+    if model_id is None:
+        model_id = sample_model_id(sample)
+    return await model_json(model_id, message_for_adjust(sample, scalars), with_fluxes=with_fluxes, method=method, map=map)
 
 
 async def model_for_sample(sample, with_fluxes=True, method=None, map=None):

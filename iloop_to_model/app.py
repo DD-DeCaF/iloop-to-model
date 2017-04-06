@@ -4,8 +4,9 @@ from aiohttp import web
 from functools import wraps
 from iloop_to_model import iloop_client, logger
 from iloop_to_model.settings import Default
-from iloop_to_model.iloop_to_model import gather_for_phases, scalars_by_phases, \
-    fluxes_for_phase, model_for_phase, theoretical_maximum_yield_for_phase, phases_for_sample, info_for_sample
+from iloop_to_model.iloop_to_model import (gather_for_phases, scalars_by_phases,
+                                           fluxes_for_phase, model_for_phase, theoretical_maximum_yield_for_phase,
+                                           phases_for_sample, info_for_sample, model_options_for_sample)
 
 
 def call_iloop_with_token(f):
@@ -20,6 +21,7 @@ def call_iloop_with_token(f):
                         api = redirect_api
         iloop = iloop_client(api, token)
         return await f(request, iloop)
+
     return wrapper
 
 
@@ -67,22 +69,35 @@ async def sample_in_phases(request, iloop, function_for_phase):
 
 @call_iloop_with_token
 async def sample_maximum_yields(request, iloop):
-    return await sample_in_phases(request, iloop, theoretical_maximum_yield_for_phase)
+    model_id = request.GET['model-id'] if 'model-id' in request.GET else None
+    return await sample_in_phases(request, iloop,
+                                  lambda x, y: theoretical_maximum_yield_for_phase(x, y, model_id))
 
 
 @call_iloop_with_token
 async def sample_model(request, iloop):
+    model_id = request.GET['model-id'] if 'model-id' in request.GET else None
     with_fluxes = 'with-fluxes' in request.GET and request.GET['with-fluxes'] == '1'
     method = request.GET['method'] if 'method' in request.GET else None
     map = request.GET['map'] if 'map' in request.GET else None
-    return await sample_in_phases(request, iloop, lambda x, y: model_for_phase(x, y, with_fluxes=with_fluxes, method=method, map=map))
+    return await sample_in_phases(request, iloop,
+                                  lambda x, y: model_for_phase(x, y, with_fluxes=with_fluxes, method=method, map=map,
+                                                               model_id=model_id))
+
+
+@call_iloop_with_token
+async def sample_model_options(request, iloop):
+    sample = iloop.Sample(request.match_info['sample_id'])
+    return web.json_response(await model_options_for_sample(sample))
 
 
 @call_iloop_with_token
 async def sample_fluxes(request, iloop):
+    model_id = request.GET['model-id'] if 'model-id' in request.GET else None
     method = request.GET['method'] if 'method' in request.GET else None
     map = request.GET['map'] if 'map' in request.GET else None
-    return await sample_in_phases(request, iloop, lambda x, y: fluxes_for_phase(x, y, method=method, map=map))
+    return await sample_in_phases(request, iloop, lambda x, y: fluxes_for_phase(x, y, method=method, map=map,
+                                                                                model_id=model_id))
 
 
 @call_iloop_with_token
@@ -97,6 +112,7 @@ ROUTE_CONFIG = {
     '/samples/{sample_id}/phases': list_phases,
     '/samples/{sample_id}/maximum-yield': sample_maximum_yields,
     '/samples/{sample_id}/model': sample_model,
+    '/samples/{sample_id}/model-options': sample_model_options,
     '/samples/{sample_id}/fluxes': sample_fluxes,
     '/samples/{sample_id}/info': sample_info
 }
