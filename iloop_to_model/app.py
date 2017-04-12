@@ -1,12 +1,16 @@
 import asyncio
+import json
+from collections import defaultdict
+from functools import wraps
+
 import aiohttp_cors
 from aiohttp import web
-from functools import wraps
+
 from iloop_to_model import iloop_client, logger
+from iloop_to_model.iloop_to_model import (
+    fluxes_for_phase, gather_for_phases, info_for_samples, model_for_phase, model_options_for_samples,
+    phases_for_samples, scalars_by_phases, theoretical_maximum_yield_for_phase)
 from iloop_to_model.settings import Default
-from iloop_to_model.iloop_to_model import (gather_for_phases, scalars_by_phases,
-                                           fluxes_for_phase, model_for_phase, theoretical_maximum_yield_for_phase,
-                                           phases_for_sample, info_for_sample, model_options_for_sample)
 
 
 def call_iloop_with_token(f):
@@ -39,39 +43,55 @@ async def list_experiments(request, iloop):
 @call_iloop_with_token
 async def list_samples(request, iloop):
     experiment = iloop.Experiment(request.match_info['experiment_id'])
-    return web.json_response([dict(
-        id=sample.id,
-        name=sample.name,
-        organism=sample.strain.organism.short_code
-    ) for sample in experiment.read_samples()])
+    operation = experiment.attributes['operation']
+    samples = experiment.read_samples()
+
+    sample_groups = []
+    added = set()
+    if operation is not None:
+        replicate_groups = defaultdict(list)
+        for k, v in operation.items():
+            replicate_groups[v].append(k)
+        for name, group in replicate_groups.items():
+            sample_ids_in_group = [s.id for s in samples if s.name in group]
+            added |= set(sample_ids_in_group)
+            sample_groups.append(
+                dict(id=sample_ids_in_group, name=name, organism=samples[0].strain.organism.short_code))
+    # add all samples that were not part of any group to their own lonely group
+    for s in samples:
+        if s.id not in added:
+            sample_groups.append(dict(id=[s.id], name=s.name, organism=s.strain.organism.short_code))
+
+    return web.json_response(sample_groups)
 
 
 @call_iloop_with_token
 async def list_phases(request, iloop):
-    sample = iloop.Sample(request.match_info['sample_id'])
-    return web.json_response(await phases_for_sample(sample))
+    samples = [iloop.Sample(s) for s in json.loads(request.GET['sample-ids'])]
+    return web.json_response(await phases_for_samples(samples))
 
 
 async def sample_in_phases(request, iloop, function_for_phase):
-    sample = iloop.Sample(request.match_info['sample_id'])
+    samples = [iloop.Sample(s) for s in json.loads(request.GET['sample-ids'])]
 
     async def for_phase(s):
         scalars = scalars_by_phases(s)
         return await function_for_phase(s, scalars[int(request.GET['phase-id'])])
 
-    async def for_sample(s):
+    async def for_samples(s):
         return await gather_for_phases(s, function_for_phase)
 
     if 'phase-id' in request.GET:
-        return web.json_response(await for_phase(sample))
-    return web.json_response(await for_sample(sample))
+        return web.json_response(await for_phase(samples))
+    return web.json_response(await for_samples(samples))
 
 
 @call_iloop_with_token
 async def sample_maximum_yields(request, iloop):
     model_id = request.GET['model-id'] if 'model-id' in request.GET else None
     return await sample_in_phases(request, iloop,
-                                  lambda x, y: theoretical_maximum_yield_for_phase(x, y, model_id))
+                                  lambda samples, scalars: theoretical_maximum_yield_for_phase(samples, scalars,
+                                                                                               model_id))
 
 
 @call_iloop_with_token
@@ -81,14 +101,16 @@ async def sample_model(request, iloop):
     method = request.GET['method'] if 'method' in request.GET else None
     map = request.GET['map'] if 'map' in request.GET else None
     return await sample_in_phases(request, iloop,
-                                  lambda x, y: model_for_phase(x, y, with_fluxes=with_fluxes, method=method, map=map,
-                                                               model_id=model_id))
+                                  lambda samples, scalars: model_for_phase(samples, scalars, with_fluxes=with_fluxes,
+                                                                           method=method, map=map,
+                                                                           model_id=model_id))
 
 
 @call_iloop_with_token
 async def sample_model_options(request, iloop):
-    sample = iloop.Sample(request.match_info['sample_id'])
-    return web.json_response(await model_options_for_sample(sample))
+    sample_ids = json.loads(request.GET['sample-ids'])
+    sample = iloop.Sample(sample_ids[0])
+    return web.json_response(await model_options_for_samples(sample))
 
 
 @call_iloop_with_token
@@ -96,25 +118,26 @@ async def sample_fluxes(request, iloop):
     model_id = request.GET['model-id'] if 'model-id' in request.GET else None
     method = request.GET['method'] if 'method' in request.GET else None
     map = request.GET['map'] if 'map' in request.GET else None
-    return await sample_in_phases(request, iloop, lambda x, y: fluxes_for_phase(x, y, method=method, map=map,
-                                                                                model_id=model_id))
+    return await sample_in_phases(request, iloop,
+                                  lambda samples, scalars: fluxes_for_phase(samples, scalars, method=method, map=map,
+                                                                            model_id=model_id))
 
 
 @call_iloop_with_token
 async def sample_info(request, iloop):
-    return await sample_in_phases(request, iloop, info_for_sample)
+    return await sample_in_phases(request, iloop, info_for_samples)
 
 
 ROUTE_CONFIG = {
     '/species': list_species,
     '/experiments': list_experiments,
     '/experiments/{experiment_id}/samples': list_samples,
-    '/samples/{sample_id}/phases': list_phases,
-    '/samples/{sample_id}/maximum-yield': sample_maximum_yields,
-    '/samples/{sample_id}/model': sample_model,
-    '/samples/{sample_id}/model-options': sample_model_options,
-    '/samples/{sample_id}/fluxes': sample_fluxes,
-    '/samples/{sample_id}/info': sample_info
+    '/samples/phases': list_phases,
+    '/samples/model-options': sample_model_options,
+    '/samples/info': sample_info,
+    '/data-adjusted/model': sample_model,
+    '/data-adjusted/fluxes': sample_fluxes,
+    '/data-adjusted/maximum-yield': sample_maximum_yields
 }
 
 app = web.Application()
