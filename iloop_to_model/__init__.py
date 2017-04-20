@@ -1,9 +1,10 @@
 import logging
 import sys
 from functools import lru_cache
+
+import requests
 from potion_client import Client
 from potion_client.auth import HTTPBearerAuth
-import requests
 
 logger = logging.getLogger('iloop-to-model')
 logger.addHandler(logging.StreamHandler(stream=sys.stdout))  # Logspout captures logs from stdout if docker containers

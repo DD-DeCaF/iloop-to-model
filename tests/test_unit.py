@@ -1,8 +1,9 @@
 from collections import namedtuple
-import pytest
-from iloop_to_model.iloop_to_model import (message_for_adjust, MEASUREMENTS, MEDIUM, phases_for_sample,
-                                           extract_genotype_changes)
 
+import pytest
+
+from iloop_to_model.iloop_to_model import (
+    MEASUREMENTS, MEDIUM, extract_genotype_changes, message_for_adjust, phases_for_samples, scalars_by_phases)
 
 Sample = namedtuple('Sample', ['strain', 'medium', 'feed_medium', 'read_scalars', 'name'])
 Strain = namedtuple('Strain', ['organism', 'parent_strain', 'pool', 'parent_pool', 'genotype'])
@@ -43,18 +44,24 @@ scalars = [{'measurements': [0.0, 0.0],
                                    'unit': 'mg'},
                      'rate': 'h',
                      'type': 'uptake-rate'}}]
-sample = Sample(strain, medium, medium, lambda: scalars, 'S1')
+
+s1 = Sample(strain, medium, medium, lambda: scalars, 'S1')
+s2 = Sample(strain, medium, medium, lambda: scalars, 'S2')
+samples_args = [[s1], [s1, s2]]
 
 
-def test_message_for_adjust():
-    message = message_for_adjust(sample)
+@pytest.mark.parametrize('samples', samples_args)
+def test_message_for_adjust(samples):
+    message = message_for_adjust(samples)
     assert message[MEASUREMENTS] == []
-    message = message_for_adjust(sample, scalars)
+    grouped_scalars_phase1 = scalars_by_phases(samples)[1]
+    message = message_for_adjust(samples, grouped_scalars_phase1)
     assert len(message[MEASUREMENTS]) == 2
     assert len(message[MEDIUM]) == 4
     assert extract_genotype_changes(strain) == ['+pool_gene', '+Aac']
 
 
 @pytest.mark.asyncio
-async def test_phases_for_sample():
-    assert await phases_for_sample(sample) == [{'id': 1, 'name': 'phase1 (0 - 14 hours)'}]
+@pytest.mark.parametrize('samples', samples_args)
+async def test_phases_for_sample(samples):
+    assert await phases_for_samples(samples) == [{'id': 1, 'name': 'phase1 (0 - 14 hours)'}]
