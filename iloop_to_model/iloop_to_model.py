@@ -187,7 +187,7 @@ async def make_request(model_id, message):
     :return: response for the service as dict
     """
     print(message)
-    async with aiohttp.ClientSession() as session:
+    async with aiohttp.ClientSession(headers={'Content-Type': 'application/json'}) as session:
         async with session.post(
                 '{}/models/{}'.format(os.environ['MODEL_API'], model_id),
                 data=json.dumps({'message': message})
@@ -208,7 +208,7 @@ async def _call_with_return(model_id, adjust_message, return_message):
     message.update(return_message)
     call_result = await make_request(model_id, message)
     result = {
-        'model-id': call_result['model-id'],
+        'model_id': call_result['model-id'],
     }
     for key in return_message['to-return']:
         result[key] = call_result[key]
@@ -263,6 +263,20 @@ async def tmy(model_id, adjust_message, objectives):
     return await _call_with_return(model_id, adjust_message, return_message)
 
 
+def tmy_to_dict(data):
+    # TODO: replace with compatible message from the model service
+    if not data:
+        return data
+    u, l = 'objective_upper_bound', 'objective_lower_bound'
+    o = list(set(data.keys()) - {u, l})[0]
+    return dict(
+        objective_upper_bound=data[u],
+        objective_lower_bound=data[l],
+        objective=data[o],
+        objective_id=o,
+    )
+
+
 async def theoretical_maximum_yield_for_phase(samples, scalars, model_id=None):
     """Get theoretical maximum yields for phase scalars, with growth rates and measurements, both for modified and wild type
 
@@ -295,8 +309,8 @@ async def theoretical_maximum_yield_for_phase(samples, scalars, model_id=None):
         result['metabolites'][compound['name']] = {
             'flux': compound['measurements'],
             'phase-planes': {
-                'modified': tmy_modified['tmy'][compound['id']],
-                'wild': tmy_wild_type['tmy'][compound['id']],
+                'modified': tmy_to_dict(tmy_modified['tmy'][compound['id']]),
+                'wild': tmy_to_dict(tmy_wild_type['tmy'][compound['id']]),
             }
         }
     return result

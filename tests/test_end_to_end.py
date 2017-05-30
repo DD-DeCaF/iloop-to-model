@@ -1,5 +1,3 @@
-import json
-
 import requests
 
 from iloop_to_model import iloop_client
@@ -16,20 +14,29 @@ class TestUM:
         self.model = {'ECO': 'iJO1366', 'SCE': 'iMM904'}[samples[0].strain.organism.short_code]
 
     def test_request(self):
-        payload = {'sample-ids': json.dumps(self.sample_ids)}
-        queries = {
-            '/species': {},
-            '/experiments': {},
-            '/experiments/{}/samples'.format(self.experiment.id): {},
+        payload = {
+            'sampleIds': self.sample_ids,
+            'phaseId': 1,
+            'withFluxes': True,
+            'method': 'room',
+            'modelId': 'iJO1366',
+        }
+        get_queries = {
+            '/species',
+            '/experiments',
+            '/experiments/{}/samples'.format(self.experiment.id),
+        }
+        post_queries = {
             '/samples/phases': payload,
             '/samples/model-options': payload,
             '/samples/info': payload,
-            '/data-adjusted/model?phase-id=1&with-fluxes=1&method=room': payload,
             '/data-adjusted/model': payload,
             '/data-adjusted/fluxes': payload,
-            '/data-adjusted/maximum-yield?model-id={}'.format(self.model): payload,
             '/data-adjusted/maximum-yield': payload
         }
-        for url, payload in queries.items():
-            r = requests.get(self.api + url, params=payload)
+        for url in get_queries:
+            r = requests.get(self.api + url)
+            r.raise_for_status()
+        for url, payload in post_queries.items():
+            r = requests.post(self.api + url, json=payload)
             r.raise_for_status()

@@ -1,146 +1,193 @@
 import asyncio
-import json
 from collections import defaultdict
-from functools import wraps
 
 import aiohttp_cors
-from aiohttp import web
+from venom.rpc import Service, Venom
+from venom.rpc.comms.aiohttp import create_app
+from venom.rpc.method import http
+from venom.rpc.reflect.service import ReflectService
 
 from iloop_to_model import iloop_client, logger
 from iloop_to_model.iloop_to_model import (
-    fluxes_for_phase, gather_for_phases, info_for_samples, model_for_phase, model_options_for_samples,
-    phases_for_samples, scalars_by_phases, theoretical_maximum_yield_for_phase)
+    fluxes_for_phase, gather_for_phases, info_for_samples, model_for_phase,
+    model_options_for_samples,
+    phases_for_samples, scalars_by_phases, theoretical_maximum_yield_for_phase,
+    ILOOP_SPECIES_TO_TAXON)
 from iloop_to_model.settings import Default
+from iloop_to_model.stubs import *
 
 
-def call_iloop_with_token(f):
-    @wraps(f)
-    async def wrapper(request):
-        api, token = Default.ILOOP_API, Default.ILOOP_TOKEN
-        if 'Authorization' in request.headers:
-            token = request.headers['Authorization'].replace('Bearer ', '')
-            if 'Origin' in request.headers:
-                for origin, redirect_api in Default.REDIRECTS.items():
-                    if origin in request.headers['Origin']:
-                        api = redirect_api
-        iloop = iloop_client(api, token)
-        return await f(request, iloop)
-
-    return wrapper
+def iloop_from_context(context):
+    headers = context.request.headers
+    api, token = Default.ILOOP_API, Default.ILOOP_TOKEN
+    if 'Authorization' in headers:
+        token = headers['Authorization'].replace('Bearer ', '')
+        if 'Origin' in headers:
+            for origin, redirect_api in Default.REDIRECTS.items():
+                if origin in headers['Origin']:
+                    api = redirect_api
+    return iloop_client(api, token)
 
 
-@call_iloop_with_token
-async def list_species(request, iloop):
-    return web.json_response(Default.ORGANISM_TO_MODEL)
-
-
-@call_iloop_with_token
-async def list_experiments(request, iloop):
-    experiments = iloop.Experiment.instances(where=dict(type='fermentation'))
-    return web.json_response([dict(id=experiment.id, name=experiment.identifier) for experiment in experiments])
-
-
-@call_iloop_with_token
-async def list_samples(request, iloop):
-    experiment = iloop.Experiment(request.match_info['experiment_id'])
-    operation = experiment.attributes['operation']
-    samples = experiment.read_samples()
-
-    sample_groups = []
-    added = set()
-    if operation is not None:
-        replicate_groups = defaultdict(list)
-        for k, v in operation.items():
-            replicate_groups[v].append(k)
-        for name, group in replicate_groups.items():
-            sample_ids_in_group = [s.id for s in samples if s.name in group]
-            added |= set(sample_ids_in_group)
-            sample_groups.append(
-                dict(id=sample_ids_in_group, name=name, organism=samples[0].strain.organism.short_code))
-    # add all samples that were not part of any group to their own lonely group
-    for s in samples:
-        if s.id not in added:
-            sample_groups.append(dict(id=[s.id], name=s.name, organism=s.strain.organism.short_code))
-
-    return web.json_response(sample_groups)
-
-
-@call_iloop_with_token
-async def list_phases(request, iloop):
-    samples = [iloop.Sample(s) for s in json.loads(request.GET['sample-ids'])]
-    return web.json_response(await phases_for_samples(samples))
-
-
-async def sample_in_phases(request, iloop, function_for_phase):
-    samples = [iloop.Sample(s) for s in json.loads(request.GET['sample-ids'])]
+async def sample_in_phases_venom(request, iloop, function_for_phase):
+    samples = [iloop.Sample(s) for s in request.sample_ids]
 
     async def for_phase(s):
         scalars = scalars_by_phases(s)
-        return await function_for_phase(s, scalars[int(request.GET['phase-id'])])
+        return await function_for_phase(s, scalars[request.phase_id])
 
     async def for_samples(s):
         return await gather_for_phases(s, function_for_phase)
 
-    if 'phase-id' in request.GET:
-        return web.json_response(await for_phase(samples))
-    return web.json_response(await for_samples(samples))
+    if request.phase_id:
+        return {request.phase_id: await for_phase(samples)}
+    return await for_samples(samples)
 
 
-@call_iloop_with_token
-async def sample_maximum_yields(request, iloop):
-    model_id = request.GET['model-id'] if 'model-id' in request.GET else None
-    return await sample_in_phases(request, iloop,
-                                  lambda samples, scalars: theoretical_maximum_yield_for_phase(samples, scalars,
-                                                                                               model_id))
+class SpeciesService(Service):
+    class Meta:
+        name = 'species'
+
+    @http.GET('.', description='Organism short codes to taxons')
+    async def species(self) -> OrganismToTaxonMessage:
+        return OrganismToTaxonMessage(ILOOP_SPECIES_TO_TAXON)
 
 
-@call_iloop_with_token
-async def sample_model(request, iloop):
-    model_id = request.GET['model-id'] if 'model-id' in request.GET else None
-    with_fluxes = 'with-fluxes' in request.GET and request.GET['with-fluxes'] == '1'
-    method = request.GET['method'] if 'method' in request.GET else None
-    map = request.GET['map'] if 'map' in request.GET else None
-    return await sample_in_phases(request, iloop,
-                                  lambda samples, scalars: model_for_phase(samples, scalars, with_fluxes=with_fluxes,
-                                                                           method=method, map=map,
-                                                                           model_id=model_id))
+class ExperimentsService(Service):
+    class Meta:
+        name = 'experiments'
+
+    @http.GET('.', description='List of experiments')
+    async def experiments(self) -> ExperimentsMessage:
+        iloop = iloop_from_context(self.context)
+        experiments = iloop.Experiment.instances(where=dict(type='fermentation'))
+        return ExperimentsMessage([
+            ExperimentMessage(id=experiment.id, name=experiment.identifier)
+            for experiment in experiments])
+
+    @http.GET('./{experiment_id}/samples', description='List of samples for the given experiment')
+    async def list_samples(self, request: SamplesRequestMessage) -> SamplesMessage:
+        iloop = iloop_from_context(self.context)
+        experiment = iloop.Experiment(request.experiment_id)
+        operation = experiment.attributes['operation']
+        samples = experiment.read_samples()
+
+        sample_groups = []
+        added = set()
+        if operation is not None:
+            replicate_groups = defaultdict(list)
+            for k, v in operation.items():
+                replicate_groups[v].append(k)
+            for name, group in replicate_groups.items():
+                sample_ids_in_group = [s.id for s in samples if
+                                       s.name in group]
+                added |= set(sample_ids_in_group)
+                sample_groups.append(
+                    dict(id=sample_ids_in_group, name=name,
+                         organism=samples[0].strain.organism.short_code))
+        # add all samples that were not part of any group to their own lonely group
+        for s in samples:
+            if s.id not in added:
+                sample_groups.append(SampleMessage(id=[s.id], name=s.name,
+                                          organism=s.strain.organism.short_code))
+
+        return SamplesMessage(sample_groups)
 
 
-@call_iloop_with_token
-async def sample_model_options(request, iloop):
-    sample_ids = json.loads(request.GET['sample-ids'])
-    sample = iloop.Sample(sample_ids[0])
-    return web.json_response(await model_options_for_samples(sample))
+class SamplesService(Service):
+    class Meta:
+        name = 'samples'
+
+    @http.POST('./phases', description='Phases for the given list of samples')
+    async def list_phases(self, request: ModelRequestMessage) -> PhasesMessage:
+        iloop = iloop_from_context(self.context)
+        samples = [iloop.Sample(s) for s in request.sample_ids]
+        return PhasesMessage([PhaseMessage(**d) for d in await phases_for_samples(samples)])
+
+    @http.POST('./info', description='Information about measurements, medium and genotype changes for the given list of samples')
+    async def sample_info(self, request: ModelRequestMessage) -> SamplesInfoMessage:
+        iloop = iloop_from_context(self.context)
+        result = await sample_in_phases_venom(request, iloop, info_for_samples)
+        return SamplesInfoMessage(response={k: SampleInfoMessage(
+            genotype_changes=v['genotype-changes'],
+            measurements=[MetaboliteMeasurementMessage(**i) for i in v['measurements']],
+            medium=[MetaboliteMediumMessage(**i) for i in v['medium']],
+        ) for k, v in result.items()})
+
+    @http.POST('./model-options',
+               description='Information about measurements, medium and genotype changes for the given list of samples')
+    async def sample_model_options(self, request: ModelRequestMessage) -> SampleModelsMessage:
+        iloop = iloop_from_context(self.context)
+        sample = iloop.Sample(request.sample_ids[0])
+        result = await model_options_for_samples(sample)
+        return SampleModelsMessage(response=result)
 
 
-@call_iloop_with_token
-async def sample_fluxes(request, iloop):
-    model_id = request.GET['model-id'] if 'model-id' in request.GET else None
-    method = request.GET['method'] if 'method' in request.GET else None
-    map = request.GET['map'] if 'map' in request.GET else None
-    return await sample_in_phases(request, iloop,
-                                  lambda samples, scalars: fluxes_for_phase(samples, scalars, method=method, map=map,
-                                                                            model_id=model_id))
+class DataAdjustedService(Service):
+    class Meta:
+        name = 'data-adjusted'
+
+    @http.POST('./maximum-yield', description='Calculate maximum yield for given model and sample list')
+    async def sample_maximum_yields(self, request: ModelRequestMessage) -> MaximumYieldsMessage:
+        iloop = iloop_from_context(self.context)
+        model_id = request.model_id or None
+        result = await sample_in_phases_venom(request, iloop,
+                                      lambda samples,
+                                             scalars: theoretical_maximum_yield_for_phase(
+                                          samples, scalars,
+                                          model_id))
+        return MaximumYieldsMessage(
+            response={k: MaximumYieldMessage(
+                growth_rate=v['growth-rate'],
+                metabolites={i: MetabolitePhasePlaneMessage(
+                    flux=j['flux'],
+                    phase_planes=PhasePlanesMessage(
+                        wild=PhasePlaneMessage(**j['phase-planes']['wild']),
+                        modified=PhasePlaneMessage(**j['phase-planes']['modified']),
+                    )
+                )}
+            ) for k, v in result.items() for i, j in v['metabolites'].items()}
+        )
+
+    @http.POST('./fluxes', description='Calculate fluxes for given model, sample list, simulation method and map')
+    async def sample_fluxes(self, request: ModelRequestMessage) -> ModelsMessage:
+        iloop = iloop_from_context(self.context)
+        result = await sample_in_phases_venom(
+            request, iloop,
+            lambda samples, scalars: fluxes_for_phase(
+                samples, scalars,
+                method=request.method,
+                map=request.map,
+                model_id=request.model_id
+            )
+        )
+        return ModelsMessage(response={k: ModelMessage(**v) for k, v in result.items()})
+
+    @http.POST('./model', description='Return adjusted models for given model, '
+                                      'sample list, simulation method and map. '
+                                      'Fluxes information can be added')
+    async def sample_model(self, request: ModelRequestMessage) -> ModelsMessage:
+        iloop = iloop_from_context(self.context)
+        result = await sample_in_phases_venom(request, iloop,
+                                      lambda samples, scalars: model_for_phase(
+                                          samples, scalars,
+                                          with_fluxes=request.with_fluxes,
+                                          method=request.method, map=request.map,
+                                          model_id=request.model_id))
+        return ModelsMessage(response={k: ModelMessage(
+            model=JSONValue(v['model']),
+            model_id=v['model_id'],
+            fluxes=v.get('fluxes')
+        ) for k, v in result.items()})
 
 
-@call_iloop_with_token
-async def sample_info(request, iloop):
-    return await sample_in_phases(request, iloop, info_for_samples)
-
-
-ROUTE_CONFIG = {
-    '/species': list_species,
-    '/experiments': list_experiments,
-    '/experiments/{experiment_id}/samples': list_samples,
-    '/samples/phases': list_phases,
-    '/samples/model-options': sample_model_options,
-    '/samples/info': sample_info,
-    '/data-adjusted/model': sample_model,
-    '/data-adjusted/fluxes': sample_fluxes,
-    '/data-adjusted/maximum-yield': sample_maximum_yields
-}
-
-app = web.Application()
+venom = Venom(version='0.1.0', title='ILoop To Model')
+venom.add(SpeciesService)
+venom.add(ExperimentsService)
+venom.add(SamplesService)
+venom.add(DataAdjustedService)
+venom.add(ReflectService)
+app = create_app(venom)
 # Configure default CORS settings.
 cors = aiohttp_cors.setup(app, defaults={
     "*": aiohttp_cors.ResourceOptions(
@@ -150,10 +197,10 @@ cors = aiohttp_cors.setup(app, defaults={
     )
 })
 
-for path, handler in ROUTE_CONFIG.items():
-    resource = app.router.add_resource(path)
-    cors.add(resource)
-    cors.add(resource.add_route("GET", handler))
+
+# Configure CORS on all routes.
+for route in list(app.router.routes()):
+    cors.add(route)
 
 
 async def start(loop):
