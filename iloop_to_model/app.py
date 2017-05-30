@@ -1,5 +1,4 @@
 import asyncio
-import json
 from collections import defaultdict
 
 import aiohttp_cors
@@ -41,7 +40,7 @@ async def sample_in_phases_venom(request, iloop, function_for_phase):
         return await gather_for_phases(s, function_for_phase)
 
     if request.phase_id:
-        return await for_phase(samples)
+        return {request.phase_id: await for_phase(samples)}
     return await for_samples(samples)
 
 
@@ -102,7 +101,7 @@ class SamplesService(Service):
     @http.POST('./phases', description='Phases for the given list of samples')
     async def list_phases(self, request: ModelRequestMessage) -> PhasesMessage:
         iloop = iloop_from_context(self.context)
-        samples = [iloop.Sample(s) for s in json.loads(request.sample_ids)]
+        samples = [iloop.Sample(s) for s in request.sample_ids]
         return PhasesMessage([PhaseMessage(**d) for d in await phases_for_samples(samples)])
 
     @http.POST('./info', description='Information about measurements, medium and genotype changes for the given list of samples')
@@ -117,11 +116,11 @@ class SamplesService(Service):
 
     @http.POST('./model-options',
                description='Information about measurements, medium and genotype changes for the given list of samples')
-    async def sample_model_options(self, request: ModelRequestMessage) -> SamplesInfoMessage:
+    async def sample_model_options(self, request: ModelRequestMessage) -> SampleModelsMessage:
         iloop = iloop_from_context(self.context)
         sample = iloop.Sample(request.sample_ids[0])
         result = await model_options_for_samples(sample)
-        return SamplesInfoMessage(response=result)
+        return SampleModelsMessage(response=result)
 
 
 class DataAdjustedService(Service):

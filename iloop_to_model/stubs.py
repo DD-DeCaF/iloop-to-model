@@ -1,6 +1,6 @@
-from venom.fields import MapField, Int, String, repeated, map_, Float32, Bool, Bytes
+from venom.fields import MapField, Int, String, repeated, map_, Float32, Bool
 from venom.message import Message
-from venom.common.messages import Struct, JSONValue
+from venom.common.messages import JSONValue
 
 
 class OrganismToTaxonMessage(Message):
