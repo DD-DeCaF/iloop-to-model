@@ -14,7 +14,7 @@ class Default(object):
     ILOOP_TOKEN = os.environ['ILOOP_TOKEN']
 
     REDIRECTS = {
-        'cfb.dd-decaf.eu': 'https://iloop.biosustain.dtu.dk/api',
+        'iloop.biosustain.dtu.dk': 'https://iloop.biosustain.dtu.dk/api',
         'app.dd-decaf.eu': 'https://data.dd-decaf.eu/api',
         'cfb-p-web-3.win.dtu.dk': 'https://cfb-p-web-3.win.dtu.dk/api'
     }
