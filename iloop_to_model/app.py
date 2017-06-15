@@ -110,7 +110,7 @@ class SamplesService(Service):
         result = await sample_in_phases_venom(request, iloop, info_for_samples)
         return SamplesInfoMessage(response={k: SampleInfoMessage(
             genotype_changes=v['genotype-changes'],
-            measurements=[MetaboliteMeasurementMessage(**i) for i in v['measurements']],
+            measurements=[MeasurementMessage(**i) for i in v['measurements']],
             medium=[MetaboliteMediumMessage(**i) for i in v['medium']],
         ) for k, v in result.items()})
 
