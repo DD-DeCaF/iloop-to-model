@@ -7,9 +7,10 @@ class OrganismToTaxonMessage(Message):
     response = MapField(str, description='Mapping between an organism short code and taxon')
 
 
-class MetaboliteMeasurementMessage(Message):
-    id = Int(description='Metabolite ID')
-    name = String(description='Metabolite human-readable name')
+class MeasurementMessage(Message):
+    type = String(description='The subject of the measurement, e.g. "compound", "protein" or "reaction"')
+    id = Int(description='identifier associated with the measured subject, e.g. metabolite identifier')
+    name = String(description='In case of metabolite, human-readable name')
     measurements = repeated(Float32(description='Measurements taken during the experiment'))
     unit = String(description='Units in which measurements are taken')
 
@@ -22,7 +23,7 @@ class MetaboliteMediumMessage(Message):
 
 class SampleInfoMessage(Message):
     genotype_changes = repeated(String(description='Gnomic strings for genotype changes'))
-    measurements = repeated(MetaboliteMeasurementMessage)
+    measurements = repeated(MeasurementMessage)
     medium = repeated(MetaboliteMediumMessage)
 
 
