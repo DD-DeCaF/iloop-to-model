@@ -190,7 +190,7 @@ async def model_options_for_samples(sample):
     url = '{}/model-options/{}'.format(os.environ['MODEL_API'], species)
     async with aiohttp.ClientSession() as session:
         async with session.get(url) as r:
-            assert r.status == 200
+            assert r.status == 200, f'response status {r.status} from model service'
             return await r.json()
 
 
@@ -206,7 +206,7 @@ async def make_request(model_id, message):
                 '{}/models/{}'.format(os.environ['MODEL_API'], model_id),
                 data=json.dumps({'message': message})
         ) as r:
-            print(r)
+            assert r.status == 200, f'response status {r.status} from model service'
             return await r.json()
 
 
