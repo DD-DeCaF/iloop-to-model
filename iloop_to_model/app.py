@@ -65,20 +65,20 @@ def group_id(sample):
 
 def name_groups(grouped_samples, unique_keys, names):
     """Generate a name for the group of samples,
-    using the distinctive properties. 
+    using the distinctive properties.
     Example: for samples with following ids
     A, B, C
     A, B, D
     F, B, D
-    resulting names would be 
+    resulting names would be
     A, C
     A, D
     F, D
-    
+
     :param grouped_samples: iterables of samples
     :param unique_keys: a unique key for every group from grouped_samples
     :param names: corresponding names for ids from unique_keys
-    :return: 
+    :return:
     """
     result = []
     if not unique_keys:
@@ -105,9 +105,8 @@ class ExperimentsService(Service):
     async def experiments(self) -> ExperimentsMessage:
         iloop = iloop_from_context(self.context)
         experiments = iloop.Experiment.instances(where=dict(type='fermentation'))
-        return ExperimentsMessage([
-            ExperimentMessage(id=experiment.id, name=experiment.identifier)
-            for experiment in experiments])
+        return ExperimentsMessage([ExperimentMessage(id=experiment.id, name=experiment.identifier)
+                                   for experiment in experiments])
 
     @http.GET('./{experiment_id}/samples', description='List of samples for the given experiment')
     async def list_samples(self, request: SamplesRequestMessage) -> SamplesMessage:
@@ -148,7 +147,8 @@ class SamplesService(Service):
         samples = [iloop.Sample(s) for s in request.sample_ids]
         return PhasesMessage([PhaseMessage(**d) for d in await phases_for_samples(samples)])
 
-    @http.POST('./info', description='Information about measurements, medium and genotype changes for the given list of samples')
+    @http.POST('./info',
+               description='Information about measurements, medium and genotype changes for the given list of samples')
     async def sample_info(self, request: ModelRequestMessage) -> SamplesInfoMessage:
         iloop = iloop_from_context(self.context)
         result = await sample_in_phases_venom(request, iloop, info_for_samples)
@@ -176,10 +176,9 @@ class DataAdjustedService(Service):
         iloop = iloop_from_context(self.context)
         model_id = request.model_id or None
         result = await sample_in_phases_venom(request, iloop,
-                                      lambda samples,
-                                             scalars: theoretical_maximum_yield_for_phase(
-                                          samples, scalars,
-                                          model_id))
+                                              lambda samples, scalars: theoretical_maximum_yield_for_phase(
+                                                  samples, scalars,
+                                                  model_id))
         return MaximumYieldsMessage(
             response={k: MaximumYieldMessage(
                 growth_rate=v['growth-rate'],
@@ -213,11 +212,11 @@ class DataAdjustedService(Service):
     async def sample_model(self, request: ModelRequestMessage) -> ModelsMessage:
         iloop = iloop_from_context(self.context)
         result = await sample_in_phases_venom(request, iloop,
-                                      lambda samples, scalars: model_for_phase(
-                                          samples, scalars,
-                                          with_fluxes=request.with_fluxes,
-                                          method=request.method, map=request.map,
-                                          model_id=request.model_id))
+                                              lambda samples, scalars: model_for_phase(
+                                                  samples, scalars,
+                                                  with_fluxes=request.with_fluxes,
+                                                  method=request.method, map=request.map,
+                                                  model_id=request.model_id))
         return ModelsMessage(response={k: ModelMessage(
             model=JSONValue(v['model']),
             model_id=v['model_id'],
@@ -240,7 +239,6 @@ cors = aiohttp_cors.setup(app, defaults={
         allow_credentials=True,
     )
 })
-
 
 # Configure CORS on all routes.
 for route in list(app.router.routes()):
