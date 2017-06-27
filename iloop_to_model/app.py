@@ -61,9 +61,8 @@ class ExperimentsService(Service):
     async def experiments(self) -> ExperimentsMessage:
         iloop = iloop_from_context(self.context)
         experiments = iloop.Experiment.instances(where=dict(type='fermentation'))
-        return ExperimentsMessage([
-            ExperimentMessage(id=experiment.id, name=experiment.identifier)
-            for experiment in experiments])
+        return ExperimentsMessage([ExperimentMessage(id=experiment.id, name=experiment.identifier)
+                                   for experiment in experiments])
 
     @http.GET('./{experiment_id}/samples', description='List of samples for the given experiment')
     async def list_samples(self, request: SamplesRequestMessage) -> SamplesMessage:
@@ -89,7 +88,7 @@ class ExperimentsService(Service):
         for s in samples:
             if s.id not in added:
                 sample_groups.append(SampleMessage(id=[s.id], name=s.name,
-                                          organism=s.strain.organism.short_code))
+                                                   organism=s.strain.organism.short_code))
 
         return SamplesMessage(sample_groups)
 
@@ -104,7 +103,8 @@ class SamplesService(Service):
         samples = [iloop.Sample(s) for s in request.sample_ids]
         return PhasesMessage([PhaseMessage(**d) for d in await phases_for_samples(samples)])
 
-    @http.POST('./info', description='Information about measurements, medium and genotype changes for the given list of samples')
+    @http.POST('./info',
+               description='Information about measurements, medium and genotype changes for the given list of samples')
     async def sample_info(self, request: ModelRequestMessage) -> SamplesInfoMessage:
         iloop = iloop_from_context(self.context)
         result = await sample_in_phases_venom(request, iloop, info_for_samples)
@@ -132,10 +132,9 @@ class DataAdjustedService(Service):
         iloop = iloop_from_context(self.context)
         model_id = request.model_id or None
         result = await sample_in_phases_venom(request, iloop,
-                                      lambda samples,
-                                             scalars: theoretical_maximum_yield_for_phase(
-                                          samples, scalars,
-                                          model_id))
+                                              lambda samples, scalars: theoretical_maximum_yield_for_phase(
+                                                  samples, scalars,
+                                                  model_id))
         return MaximumYieldsMessage(
             response={k: MaximumYieldMessage(
                 growth_rate=v['growth-rate'],
@@ -169,11 +168,11 @@ class DataAdjustedService(Service):
     async def sample_model(self, request: ModelRequestMessage) -> ModelsMessage:
         iloop = iloop_from_context(self.context)
         result = await sample_in_phases_venom(request, iloop,
-                                      lambda samples, scalars: model_for_phase(
-                                          samples, scalars,
-                                          with_fluxes=request.with_fluxes,
-                                          method=request.method, map=request.map,
-                                          model_id=request.model_id))
+                                              lambda samples, scalars: model_for_phase(
+                                                  samples, scalars,
+                                                  with_fluxes=request.with_fluxes,
+                                                  method=request.method, map=request.map,
+                                                  model_id=request.model_id))
         return ModelsMessage(response={k: ModelMessage(
             model=JSONValue(v['model']),
             model_id=v['model_id'],
@@ -196,7 +195,6 @@ cors = aiohttp_cors.setup(app, defaults={
         allow_credentials=True,
     )
 })
-
 
 # Configure CORS on all routes.
 for route in list(app.router.routes()):
