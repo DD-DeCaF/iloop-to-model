@@ -1,5 +1,5 @@
 import asyncio
-from collections import defaultdict
+from itertools import groupby
 
 import aiohttp_cors
 from venom.rpc import Service, Venom
@@ -53,6 +53,50 @@ class SpeciesService(Service):
         return OrganismToTaxonMessage(ILOOP_SPECIES_TO_TAXON)
 
 
+def group_id(sample):
+    """Unique identifier for the sample using its properties"""
+    return (
+        sample.strain.pool.id,
+        sample.medium.id,
+        sample.feed_medium.id,
+        sample.operation,
+    )
+
+
+def name_groups(grouped_samples, unique_keys, names):
+    """Generate a name for the group of samples,
+    using the distinctive properties. 
+    Example: for samples with following ids
+    A, B, C
+    A, B, D
+    F, B, D
+    resulting names would be 
+    A, C
+    A, D
+    F, D
+    
+    :param grouped_samples: iterables of samples
+    :param unique_keys: a unique key for every group from grouped_samples
+    :param names: corresponding names for ids from unique_keys
+    :return: 
+    """
+    result = []
+    if not unique_keys:
+        return result
+    rs = [set() for _ in unique_keys[0]]
+    for unique_key in unique_keys:
+        for j, k in enumerate(unique_key):
+            rs[j].add(k)
+    indexes = [j for j, v in enumerate(rs) if len(v) != 1]
+    for i, group in enumerate(grouped_samples):
+        result.append(SampleMessage(
+            id=[s.id for s in group],
+            name=', '.join([names[i][j] for j in indexes]),
+            organism=group[0].strain.organism.short_code
+        ))
+    return result
+
+
 class ExperimentsService(Service):
     class Meta:
         name = 'experiments'
@@ -69,29 +113,29 @@ class ExperimentsService(Service):
     async def list_samples(self, request: SamplesRequestMessage) -> SamplesMessage:
         iloop = iloop_from_context(self.context)
         experiment = iloop.Experiment(request.experiment_id)
-        operation = experiment.attributes['operation']
-        samples = experiment.read_samples()
-
-        sample_groups = []
-        added = set()
-        if operation is not None:
-            replicate_groups = defaultdict(list)
-            for k, v in operation.items():
-                replicate_groups[v].append(k)
-            for name, group in replicate_groups.items():
-                sample_ids_in_group = [s.id for s in samples if
-                                       s.name in group]
-                added |= set(sample_ids_in_group)
-                sample_groups.append(
-                    dict(id=sample_ids_in_group, name=name,
-                         organism=samples[0].strain.organism.short_code))
-        # add all samples that were not part of any group to their own lonely group
+        samples = list(experiment.read_samples())
+        operation = experiment.attributes['operation'] or {}
         for s in samples:
-            if s.id not in added:
-                sample_groups.append(SampleMessage(id=[s.id], name=s.name,
-                                          organism=s.strain.organism.short_code))
-
-        return SamplesMessage(sample_groups)
+            s.operation = s.name
+        for k, v in operation.items():
+            for s in samples:
+                if s.name == k:
+                    s.operation = v
+        grouped_samples = []
+        unique_keys = []
+        names = []
+        data = sorted(experiment.read_samples(), key=group_id)
+        for k, g in groupby(data, group_id):
+            grouped_samples.append(list(g))
+            unique_keys.append(k)
+        for key in unique_keys:
+            names.append((
+                iloop.Pool(key[0]).identifier,
+                iloop.Medium(key[1]).name,
+                iloop.Medium(key[2]).name,
+                key[3],
+            ))
+        return SamplesMessage(name_groups(grouped_samples, unique_keys, names))
 
 
 class SamplesService(Service):
