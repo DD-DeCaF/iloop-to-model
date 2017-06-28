@@ -3,9 +3,11 @@ from collections import namedtuple
 import pytest
 
 from iloop_to_model.iloop_to_model import (
-    MEASUREMENTS, MEDIUM, extract_genotype_changes, message_for_adjust, phases_for_samples, scalars_by_phases)
+    MEASUREMENTS, MEDIUM, extract_genotype_changes, message_for_adjust, phases_for_samples, scalars_by_phases
+)
+from iloop_to_model.app import name_groups
 
-Sample = namedtuple('Sample', ['strain', 'medium', 'feed_medium', 'read_scalars', 'name', 'read_omics'])
+Sample = namedtuple('Sample', ['id', 'strain', 'medium', 'feed_medium', 'read_scalars', 'name', 'read_omics'])
 Strain = namedtuple('Strain', ['organism', 'parent_strain', 'pool', 'parent_pool', 'genotype'])
 Medium = namedtuple('Medium', ['read_contents'])
 Product = namedtuple('Product', ['chebi_id', 'chebi_name'])
@@ -59,8 +61,9 @@ omics = dict(
          'type': 'protein'}]
 )
 
-s1 = Sample(strain, medium, medium, lambda: scalars, 'S1', lambda type: omics[type])
-s2 = Sample(strain, medium, medium, lambda: scalars, 'S2', lambda type: omics[type])
+s1 = Sample(1, strain, medium, medium, lambda: scalars, 'S1', lambda type: omics[type])
+s2 = Sample(2, strain, medium, medium, lambda: scalars, 'S2', lambda type: omics[type])
+s3 = Sample(3, strain, medium, medium, lambda: scalars, 'S3', lambda type: omics[type])
 samples_args = [[s1], [s1, s2]]
 
 
@@ -79,3 +82,21 @@ def test_message_for_adjust(samples):
 @pytest.mark.parametrize('samples', samples_args)
 async def test_phases_for_sample(samples):
     assert await phases_for_samples(samples) == [{'id': 1, 'name': 'phase1 (0 - 14 hours)'}]
+
+
+def test_name_groups():
+    sample_groups = [[s1], [s2], [s3]]
+    unique_keys = [
+        (1, 1, 1, 1),
+        (2, 2, 2, 1),
+        (3, 2, 2, 1),
+    ]
+    names = [
+        ('A1', 'B1', 'C1', 'D'),
+        ('A2', 'B2', 'C2', 'D'),
+        ('A3', 'B2', 'C2', 'D'),
+    ]
+    result = name_groups(sample_groups, unique_keys, names)
+    assert result[0].name == 'A1, B1, C1'
+    assert result[1].name == 'A2, B2, C2'
+    assert result[2].name == 'A3, B2, C2'

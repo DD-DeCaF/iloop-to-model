@@ -87,9 +87,10 @@ def scalars_by_phases(samples):
         for scalar in s.read_scalars():
             scalar['type'] = 'compound'
             phases[scalar['phase'].id][scalar_test_key(scalar)].append(scalar)
-        for omics in {'fluxomics', 'proteomics'}:
-            for omx in s.read_omics(type=omics):
-                phases[omx['phase'].id]['{}_{}'.format(omics, omx['identifier'])].append(omx)
+        if hasattr(s, 'read_omics'):
+            for omics in {'fluxomics', 'proteomics'}:
+                for omx in s.read_omics(type=omics):
+                    phases[omx['phase'].id]['{}_{}'.format(omics, omx['identifier'])].append(omx)
     return phases
 
 
