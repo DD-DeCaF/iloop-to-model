@@ -1,12 +1,23 @@
-web:
-  build: .
-  dockerfile: Dockerfile
-  ports:
-    - 7000:7000
-  environment:
-    - PYTHONUNBUFFERED=1
-    - PYTHONASYNCIODEBUG=1
-    - ILOOP_TOKEN
-    - ILOOP_API
-    - MODEL_API
-  command: ["-w", "1", "-b", "0.0.0.0:7000", "-t", "150", "-k", "aiohttp.worker.GunicornWebWorker", "iloop_to_model.app:app"]
+version: "2.1"
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "${ILOOP_TO_MODEL_PORT:-7000}:7000"
+    environment:
+      - PYTHONUNBUFFERED=1
+      - PYTHONASYNCIODEBUG=1
+      - ILOOP_TOKEN
+      - ILOOP_API=${ILOOP_API:-http://iloop-backend:80/api}
+      - MODEL_API=${MODEL_API:-http://model-backend:8000}
+    command: ["-w", "1", "-b", "0.0.0.0:7000", "-t", "150", "-k", "aiohttp.worker.GunicornWebWorker", "iloop_to_model.app:app"]
+    networks:
+      iloop-net:
+        aliases:
+          - iloop-to-model-backend
+
+networks:
+  iloop-net:
+    external: true
