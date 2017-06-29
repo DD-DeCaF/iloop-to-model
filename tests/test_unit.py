@@ -100,3 +100,8 @@ def test_name_groups():
     assert result[0].name == 'A1, B1, C1'
     assert result[1].name == 'A2, B2, C2'
     assert result[2].name == 'A3, B2, C2'
+
+    sample_groups = [[s1, s2, s3]]
+    unique_keys = [(1, 1, 1, 1)]
+    names = [('A', 'B', 'C', 'D')]
+    assert name_groups(sample_groups, unique_keys, names)[0].name == 'A, D'
