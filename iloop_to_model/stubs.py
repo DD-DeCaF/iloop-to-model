@@ -49,7 +49,7 @@ class ModelRequestMessage(Message):
     phase_id = Int(description='Phase ID')
     map = String(description='Name of map to show')
     method = String(description='Simulation method to run')
-    with_fluxes = Bool(description='Add flux information to  the respsonse')
+    with_fluxes = Bool(description='Add flux information to  the response')
 
 
 class PhasePlaneMessage(Message):
@@ -71,7 +71,8 @@ class MetabolitePhasePlaneMessage(Message):
 
 class MaximumYieldMessage(Message):
     growth_rate = repeated(Float32(description='Growth rates collected from the experiment'))
-    metabolites = MapField(MetabolitePhasePlaneMessage, description='Data for the metabolites collected from the experiment')
+    metabolites = MapField(MetabolitePhasePlaneMessage,
+                           description='Data for the metabolites collected from the experiment')
 
 
 class ModelMessage(Message):
