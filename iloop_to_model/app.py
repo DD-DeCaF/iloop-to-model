@@ -67,9 +67,9 @@ def group_id(sample):
 
 
 def name_groups(grouped_samples, unique_keys, names):
-    """Generate a name for the group of samples,
-    using the distinctive properties.
-    Example: for samples with following ids
+    """Generate a name for the group of samples, using the distinctive properties.
+
+    Example: for samples with following property identifiers
     A, B, C
     A, B, D
     F, B, D
@@ -91,6 +91,8 @@ def name_groups(grouped_samples, unique_keys, names):
         for j, k in enumerate(unique_key):
             rs[j].add(k)
     indexes = [j for j, v in enumerate(rs) if len(v) != 1]
+    if len(indexes) == 0:
+        indexes = [0, 3]
     for i, group in enumerate(grouped_samples):
         result.append(SampleMessage(
             id=[s.id for s in group],
