@@ -1,5 +1,6 @@
 import asyncio
 from itertools import groupby
+from collections import namedtuple
 
 import aiohttp_cors
 from venom.rpc import Service, Venom
@@ -15,6 +16,8 @@ from iloop_to_model.iloop_to_model import (
     ILOOP_SPECIES_TO_TAXON)
 from iloop_to_model.settings import Default
 from iloop_to_model.stubs import *
+
+NamedSample = namedtuple('NamedSample', 'pool medium feed_medium operation')
 
 
 def iloop_from_context(context):
@@ -55,11 +58,11 @@ class SpeciesService(Service):
 
 def group_id(sample):
     """Unique identifier for the sample using its properties"""
-    return (
-        sample.strain.pool.id,
-        sample.medium.id,
-        sample.feed_medium.id,
-        sample.operation,
+    return NamedSample(
+        pool=sample.strain.pool.id,
+        medium=sample.medium.id,
+        feed_medium=getattr(sample.feed_medium, 'id', 0),
+        operation=sample.operation
     )
 
 
@@ -129,10 +132,10 @@ class ExperimentsService(Service):
             unique_keys.append(k)
         for key in unique_keys:
             names.append((
-                iloop.Pool(key[0]).identifier,
-                iloop.Medium(key[1]).name,
-                iloop.Medium(key[2]).name,
-                key[3],
+                iloop.Pool(key.pool).identifier,
+                iloop.Medium(key.medium).name,
+                '' if key.feed_medium == 0 else iloop.Medium(key.feed_medium).name,
+                key.operation,
             ))
         return SamplesMessage(name_groups(grouped_samples, unique_keys, names))
 
