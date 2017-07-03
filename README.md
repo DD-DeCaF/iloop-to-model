@@ -1,12 +1,7 @@
 # Iloop-to-model Service for DD-DeCaF
 
-|Build Status| |Coverage Status|
-
-
-.. |Build Status| image:: https://travis-ci.org/DD-DeCaF/iloop-to-model.svg?branch=master
-   :target: https://travis-ci.org/DD-DeCaF/iloop-to-model
-.. |Coverage Status| image:: https://codecov.io/gh/DD-DeCaF/iloop-to-model/branch/master/graph/badge.svg
-   :target: https://codecov.io/gh/DD-DeCaF/iloop-to-model
+[![Build Status](https://travis-ci.org/DD-DeCaF/iloop-to-model.svg?branch=master)](https://travis-ci.org/DD-DeCaF/iloop-to-model)
+[![Codecov](https://codecov.io/gh/DD-DeCaF/iloop-to-model/branch/master/graph/badge.svg)](https://codecov.io/gh/DD-DeCaF/iloop-to-model)
 
 ## Installation
 
