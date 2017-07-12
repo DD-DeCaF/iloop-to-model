@@ -11,6 +11,8 @@ class MeasurementMessage(Message):
     type = String(description='The subject of the measurement, e.g. "compound", "protein" or "reaction"')
     id = Int(description='identifier associated with the measured subject, e.g. metabolite identifier')
     name = String(description='In case of metabolite, human-readable name')
+    db_name = String(description='In case of xref data, the name of the database, e.g. UniProtKB')
+    mode = String(description='Quantification mode, e.g. "relative" or "quantitative"')
     measurements = repeated(Float32(description='Measurements taken during the experiment'))
     unit = String(description='Units in which measurements are taken')
 
@@ -83,6 +85,11 @@ class ModelMessage(Message):
 
 class ExperimentsMessage(Message):
     response = repeated(ExperimentMessage)
+
+
+class ExperimentsRequestMessage(Message):
+    organism_code = String(descripton='Organism short_code that must be asssociated with at least one sample belonging '
+                                      'to the  experiment')
 
 
 class SamplesRequestMessage(Message):

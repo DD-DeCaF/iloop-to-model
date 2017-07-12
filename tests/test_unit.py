@@ -7,7 +7,8 @@ from iloop_to_model.iloop_to_model import (
 )
 from iloop_to_model.app import name_groups
 
-Sample = namedtuple('Sample', ['id', 'strain', 'medium', 'feed_medium', 'read_scalars', 'name', 'read_omics'])
+Sample = namedtuple('Sample',
+                    ['id', 'strain', 'medium', 'feed_medium', 'read_scalars', 'name', 'read_xref_measurements'])
 Strain = namedtuple('Strain', ['organism', 'parent_strain', 'pool', 'parent_pool', 'genotype'])
 Medium = namedtuple('Medium', ['read_contents'])
 Product = namedtuple('Product', ['chebi_id', 'chebi_name'])
@@ -48,22 +49,28 @@ scalars = [{'measurements': [0.0, 0.0],
                                    'unit': 'mg'},
                      'rate': 'h',
                      'type': 'uptake-rate'}}]
-omics = dict(
-    fluxomics=[
-        {'identifier': 'ENO', 'measurements': [14.1], 'phase': phase, 'test': {'type': 'rate'}, 'type': 'reaction'},
-        {'identifier': 'DHAD1m', 'measurements': [0.166], 'phase': phase, 'test': {'type': 'rate'}, 'type': 'reaction'},
-        {'identifier': 'NH4t', 'measurements': [1.02], 'phase': phase, 'test': {'type': 'rate'}, 'type': 'reaction'},
-        {'identifier': 'SUCCtm', 'measurements': [0.2], 'phase': phase, 'test': {'type': 'rate'}, 'type': 'reaction'}],
-    proteomics=[
-        {'identifier': 'ASPA_ECOLI', 'measurements': [14.1], 'phase': phase, 'test': {'type': 'abundance'},
-         'type': 'protein'},
-        {'identifier': 'ASTA_ECOLI', 'measurements': [0.2], 'phase': phase, 'test': {'type': 'abundance'},
-         'type': 'protein'}]
-)
 
-s1 = Sample(1, strain, medium, medium, lambda: scalars, 'S1', lambda type: omics[type])
-s2 = Sample(2, strain, medium, medium, lambda: scalars, 'S2', lambda type: omics[type])
-s3 = Sample(3, strain, medium, medium, lambda: scalars, 'S3', lambda type: omics[type])
+xrefs = dict(
+    reaction=[
+        {'accession': 'ENO', 'value': 14.1, 'mode': 'quantitative', 'type': 'reaction', 'db_name': 'BiGG',
+         'phase': phase},
+        {'accession': 'DHAD1m', 'value': 0.166, 'mode': 'quantitative', 'type': 'reaction', 'db_name': 'BiGG',
+         'phase': phase},
+        {'accession': 'NH4t', 'value': 1.02, 'mode': 'quantitative', 'type': 'reaction', 'db_name': 'BiGG',
+         'phase': phase},
+        {'accession': 'SUCCtm', 'value': 0.2, 'mode': 'quantitative', 'type': 'reaction', 'db_name': 'BiGG',
+         'phase': phase},
+    ],
+    protein=[
+        {'accession': 'P0AC38', 'value': 14.1, 'mode': 'quantitative', 'type': 'protein', 'db_name': 'uniprot',
+         'phase': phase},
+        {'accession': 'P0AE37', 'value': 0.2, 'mode': 'quantitative', 'type': 'protein', 'db_name': 'uniprot',
+         'phase': phase}
+    ])
+
+s1 = Sample(1, strain, medium, medium, lambda: scalars, 'S1', lambda type: xrefs[type])
+s2 = Sample(2, strain, medium, medium, lambda: scalars, 'S2', lambda type: xrefs[type])
+s3 = Sample(3, strain, medium, medium, lambda: scalars, 'S3', lambda type: xrefs[type])
 samples_args = [[s1], [s1, s2]]
 
 

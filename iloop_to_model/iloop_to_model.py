@@ -87,10 +87,11 @@ def scalars_by_phases(samples):
         for scalar in s.read_scalars():
             scalar['type'] = 'compound'
             phases[scalar['phase'].id][scalar_test_key(scalar)].append(scalar)
-        if hasattr(s, 'read_omics'):
-            for omics in {'fluxomics', 'proteomics'}:
-                for omx in s.read_omics(type=omics):
-                    phases[omx['phase'].id]['{}_{}'.format(omics, omx['identifier'])].append(omx)
+        if hasattr(s, 'read_xref_measurements'):
+            for subject_type in {'protein', 'reaction'}:
+                for xref in s.read_xref_measurements(type=subject_type):
+                    xref['type'] = subject_type
+                    phases[xref['phase'].id]['{}_{}'.format(subject_type, xref['accession'])].append(xref)
     return phases
 
 
@@ -113,25 +114,27 @@ def extract_measurements_for_phase(scalars_for_samples):
     """
     result = []
     for _, scalars in scalars_for_samples.items():
-        test = scalars[0]['test']
         scalar_type = scalars[0]['type']
-        if scalar_type == 'compound' and test['type'] in {'uptake-rate', 'production-rate'} and test['numerator']['compounds']:
-            measurements = list(chain(*[s['measurements'] for s in scalars]))
-            sign = -1 if test['type'] == 'uptake-rate' else 1
-            product = test['numerator']['compounds'][0]
-            result.append(dict(
-                id='chebi:' + str(product.chebi_id),
-                name=product.chebi_name,
-                measurements=[m * sign for m in measurements],
-                unit=test['numerator']['unit'],
-                type=scalar_type
-            ))
+        if scalar_type == 'compound':
+            test = scalars[0]['test']
+            if test['type'] in {'uptake-rate', 'production-rate'} and test['numerator']['compounds']:
+                measurements = list(chain(*[s['measurements'] for s in scalars]))
+                sign = -1 if test['type'] == 'uptake-rate' else 1
+                product = test['numerator']['compounds'][0]
+                result.append(dict(
+                    id='chebi:' + str(product.chebi_id),
+                    name=product.chebi_name,
+                    measurements=[m * sign for m in measurements],
+                    unit=test['numerator']['unit'],
+                    type=scalar_type
+                ))
         elif scalar_type in {'protein', 'reaction'}:
-            measurements = list(chain(*[s['measurements'] for s in scalars]))
             result.append(dict(
                 type=scalar_type,
-                id=scalars[0]['identifier'],
-                measurements=measurements
+                id=scalars[0]['accession'],
+                db_name=scalars[0]['db_name'],
+                mode=scalars[0]['mode'],
+                measurements=[s['value'] for s in scalars]
                 ))
     return result
 
