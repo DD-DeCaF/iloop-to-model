@@ -88,7 +88,7 @@ class ExperimentsMessage(Message):
 
 
 class ExperimentsRequestMessage(Message):
-    organism_code = String(descripton='Organism short_code that must be asssociated with at least one sample belonging '
+    organism_code = String(descripton='Organism short_code that must be associated with at least one sample belonging '
                                       'to the  experiment')
 
 

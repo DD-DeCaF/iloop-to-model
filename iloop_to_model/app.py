@@ -113,6 +113,14 @@ class ExperimentsService(Service):
         return ExperimentsMessage([ExperimentMessage(id=experiment.id, name=experiment.identifier)
                                    for experiment in experiments])
 
+    @http.GET('./{organism_code}', description='List of experiments involving organism')
+    async def experiments_for_species(self, request: ExperimentsRequestMessage) -> ExperimentsMessage:
+        iloop = iloop_from_context(self.context)
+        experiments = [e for e in iloop.Experiment.instances(where=dict(type='fermentation')) if
+                       request.organism_code in {s.strain.organism.short_code for s in e.read_samples()}]
+        return ExperimentsMessage([ExperimentMessage(id=experiment.id, name=experiment.identifier)
+                                   for experiment in experiments])
+
     @http.GET('./{experiment_id}/samples', description='List of samples for the given experiment')
     async def list_samples(self, request: SamplesRequestMessage) -> SamplesMessage:
         iloop = iloop_from_context(self.context)

@@ -11,7 +11,9 @@ class TestUM:
         self.experiment = self.iloop.Experiment.instances(where={'type': 'fermentation'})[0]
         samples = self.experiment.read_samples()
         self.sample_ids = [s.id for s in samples]
-        self.model = {'ECO': 'iJO1366', 'SCE': 'iMM904'}[samples[0].strain.organism.short_code]
+        self.organism_code = samples[0].strain.organism.short_code
+        self.model = {'ECO': 'iJO1366', 'SCE': 'iMM904'}[self.organism_code]
+
 
     def test_request(self):
         payload = {
@@ -24,6 +26,7 @@ class TestUM:
         get_queries = {
             '/species',
             '/experiments',
+            '/experiments/{}'.format(self.organism_code),
             '/experiments/{}/samples'.format(self.experiment.id),
         }
         post_queries = {
