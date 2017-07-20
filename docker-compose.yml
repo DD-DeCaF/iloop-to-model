@@ -14,10 +14,10 @@ services:
       - MODEL_API=${MODEL_API:-http://model-backend:8000}
     command: ["-w", "1", "-b", "0.0.0.0:7000", "-t", "150", "-k", "aiohttp.worker.GunicornWebWorker", "iloop_to_model.app:app"]
     networks:
-      iloop-net:
+      iloop:
         aliases:
           - iloop-to-model-backend
 
 networks:
-  iloop-net:
+  iloop:
     external: true
