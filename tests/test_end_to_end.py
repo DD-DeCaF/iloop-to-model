@@ -23,6 +23,7 @@ class TestUM:
         }
         get_queries = {
             '/species',
+            '/species/current',
             '/experiments',
             '/experiments/{}/samples'.format(self.experiment.id),
         }

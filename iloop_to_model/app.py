@@ -55,6 +55,12 @@ class SpeciesService(Service):
     async def species(self) -> OrganismToTaxonMessage:
         return OrganismToTaxonMessage(ILOOP_SPECIES_TO_TAXON)
 
+    @http.GET('./current', description='Get map of species code to name for current strains')
+    async def current_species(self) -> CurrentOrganismsMessage:
+        iloop = iloop_from_context(self.context)
+        return CurrentOrganismsMessage(dict((s.organism.short_code, s.organism.name)
+                                            for s in iloop.Strain.instances()))
+
 
 def group_id(sample):
     """Unique identifier for the sample using its properties"""
