@@ -7,6 +7,11 @@ class OrganismToTaxonMessage(Message):
     response = MapField(str, description='Mapping between an organism short code and taxon')
 
 
+class CurrentOrganismsMessage(Message):
+    response = MapField(str, description='Mapping between organism short code and '
+                                         'full name of all strains in database')
+
+
 class MeasurementMessage(Message):
     type = String(description='The subject of the measurement, e.g. "compound", "protein" or "reaction"')
     id = Int(description='identifier associated with the measured subject, e.g. metabolite identifier')
