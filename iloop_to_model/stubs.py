@@ -93,8 +93,8 @@ class ExperimentsMessage(Message):
 
 
 class ExperimentsRequestMessage(Message):
-    organism_code = String(descripton='Organism short_code that must be associated with at least one sample belonging '
-                                      'to the  experiment')
+    taxon_code = String(descripton='Species five-letter mnemonic short_code that must be associated with at least one '
+                                   'sample belonging to the  experiment')
 
 
 class SamplesRequestMessage(Message):

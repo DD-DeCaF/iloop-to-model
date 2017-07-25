@@ -55,11 +55,12 @@ class SpeciesService(Service):
     async def species(self) -> OrganismToTaxonMessage:
         return OrganismToTaxonMessage(ILOOP_SPECIES_TO_TAXON)
 
-    @http.GET('./current', description='Get map of species code to name for current strains')
+    @http.GET('./current', description='Get map of taxon mnemonic code to name for current strains')
     async def current_species(self) -> CurrentOrganismsMessage:
         iloop = iloop_from_context(self.context)
-        return CurrentOrganismsMessage(dict((s.organism.short_code, s.organism.name)
-                                            for s in iloop.Strain.instances()))
+        return CurrentOrganismsMessage(
+            dict((ILOOP_SPECIES_TO_TAXON[s.organism.short_code], s.organism.name)
+                 for s in iloop.Strain.instances()))
 
 
 def group_id(sample):
@@ -119,11 +120,12 @@ class ExperimentsService(Service):
         return ExperimentsMessage([ExperimentMessage(id=experiment.id, name=experiment.identifier)
                                    for experiment in experiments])
 
-    @http.GET('./{organism_code}', description='List of experiments involving organism')
+    @http.GET('./{taxon_code}', description='List of experiments involving given species')
     async def experiments_for_species(self, request: ExperimentsRequestMessage) -> ExperimentsMessage:
         iloop = iloop_from_context(self.context)
         experiments = [e for e in iloop.Experiment.instances(where=dict(type='fermentation')) if
-                       request.organism_code in {s.strain.organism.short_code for s in e.read_samples()}]
+                       request.taxon_code in {ILOOP_SPECIES_TO_TAXON[s.strain.organism.short_code] for s in
+                                                 e.read_samples()}]
         return ExperimentsMessage([ExperimentMessage(id=experiment.id, name=experiment.identifier)
                                    for experiment in experiments])
 
