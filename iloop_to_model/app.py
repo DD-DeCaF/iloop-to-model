@@ -209,8 +209,8 @@ class DataAdjustedService(Service):
                         wild=PhasePlaneMessage(**j['phase-planes']['wild']),
                         modified=PhasePlaneMessage(**j['phase-planes']['modified']),
                     )
-                )}
-            ) for k, v in result.items() for i, j in v['metabolites'].items()}
+                ) for i, j in v['metabolites'].items()}
+            ) for k, v in result.items()}
         )
 
     @http.POST('./fluxes', description='Calculate fluxes for given model, sample list, simulation method and map')
