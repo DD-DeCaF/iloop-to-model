@@ -1,5 +1,6 @@
 import asyncio
-from collections import defaultdict
+from itertools import groupby
+from collections import namedtuple
 
 import aiohttp_cors
 from venom.rpc import Service, Venom
@@ -15,6 +16,8 @@ from iloop_to_model.iloop_to_model import (
     ILOOP_SPECIES_TO_TAXON)
 from iloop_to_model.settings import Default
 from iloop_to_model.stubs import *
+
+NamedSample = namedtuple('NamedSample', 'pool medium feed_medium operation')
 
 
 def iloop_from_context(context):
@@ -52,6 +55,59 @@ class SpeciesService(Service):
     async def species(self) -> OrganismToTaxonMessage:
         return OrganismToTaxonMessage(ILOOP_SPECIES_TO_TAXON)
 
+    @http.GET('./current', description='Get map of taxon mnemonic code to name for current strains')
+    async def current_species(self) -> CurrentOrganismsMessage:
+        iloop = iloop_from_context(self.context)
+        return CurrentOrganismsMessage(
+            dict((ILOOP_SPECIES_TO_TAXON[s.organism.short_code], s.organism.name)
+                 for s in iloop.Strain.instances()))
+
+
+def group_id(sample):
+    """Unique identifier for the sample using its properties"""
+    return NamedSample(
+        pool=sample.strain.pool.id,
+        medium=sample.medium.id,
+        feed_medium=getattr(sample.feed_medium, 'id', 0),
+        operation=sample.operation
+    )
+
+
+def name_groups(grouped_samples, unique_keys, names):
+    """Generate a name for the group of samples, using the distinctive properties.
+
+    Example: for samples with following property identifiers
+    A, B, C
+    A, B, D
+    F, B, D
+    resulting names would be
+    A, C
+    A, D
+    F, D
+
+    :param grouped_samples: iterables of samples
+    :param unique_keys: a unique key for every group from grouped_samples
+    :param names: corresponding names for ids from unique_keys
+    :return:
+    """
+    result = []
+    if not unique_keys:
+        return result
+    rs = [set() for _ in unique_keys[0]]
+    for unique_key in unique_keys:
+        for j, k in enumerate(unique_key):
+            rs[j].add(k)
+    indexes = [j for j, v in enumerate(rs) if len(v) != 1]
+    if len(indexes) == 0:
+        indexes = [0, 3]
+    for i, group in enumerate(grouped_samples):
+        result.append(SampleMessage(
+            id=[s.id for s in group],
+            name=', '.join([names[i][j] for j in indexes]),
+            organism=group[0].strain.organism.short_code
+        ))
+    return result
+
 
 class ExperimentsService(Service):
     class Meta:
@@ -61,37 +117,45 @@ class ExperimentsService(Service):
     async def experiments(self) -> ExperimentsMessage:
         iloop = iloop_from_context(self.context)
         experiments = iloop.Experiment.instances(where=dict(type='fermentation'))
-        return ExperimentsMessage([
-            ExperimentMessage(id=experiment.id, name=experiment.identifier)
-            for experiment in experiments])
+        return ExperimentsMessage([ExperimentMessage(id=experiment.id, name=experiment.identifier)
+                                   for experiment in experiments])
+
+    @http.GET('./{taxon_code}', description='List of experiments involving given species')
+    async def experiments_for_species(self, request: ExperimentsRequestMessage) -> ExperimentsMessage:
+        iloop = iloop_from_context(self.context)
+        experiments = [e for e in iloop.Experiment.instances(where=dict(type='fermentation')) if
+                       request.taxon_code in {ILOOP_SPECIES_TO_TAXON[s.strain.organism.short_code] for s in
+                                                 e.read_samples()}]
+        return ExperimentsMessage([ExperimentMessage(id=experiment.id, name=experiment.identifier)
+                                   for experiment in experiments])
 
     @http.GET('./{experiment_id}/samples', description='List of samples for the given experiment')
     async def list_samples(self, request: SamplesRequestMessage) -> SamplesMessage:
         iloop = iloop_from_context(self.context)
         experiment = iloop.Experiment(request.experiment_id)
-        operation = experiment.attributes['operation']
-        samples = experiment.read_samples()
-
-        sample_groups = []
-        added = set()
-        if operation is not None:
-            replicate_groups = defaultdict(list)
-            for k, v in operation.items():
-                replicate_groups[v].append(k)
-            for name, group in replicate_groups.items():
-                sample_ids_in_group = [s.id for s in samples if
-                                       s.name in group]
-                added |= set(sample_ids_in_group)
-                sample_groups.append(
-                    dict(id=sample_ids_in_group, name=name,
-                         organism=samples[0].strain.organism.short_code))
-        # add all samples that were not part of any group to their own lonely group
+        samples = list(experiment.read_samples())
+        operation = experiment.attributes['operation'] or {}
         for s in samples:
-            if s.id not in added:
-                sample_groups.append(SampleMessage(id=[s.id], name=s.name,
-                                          organism=s.strain.organism.short_code))
-
-        return SamplesMessage(sample_groups)
+            s.operation = s.name
+        for k, v in operation.items():
+            for s in samples:
+                if s.name == k:
+                    s.operation = v
+        grouped_samples = []
+        unique_keys = []
+        names = []
+        data = sorted(experiment.read_samples(), key=group_id)
+        for k, g in groupby(data, group_id):
+            grouped_samples.append(list(g))
+            unique_keys.append(k)
+        for key in unique_keys:
+            names.append((
+                iloop.Pool(key.pool).identifier,
+                iloop.Medium(key.medium).name,
+                '' if key.feed_medium == 0 else iloop.Medium(key.feed_medium).name,
+                key.operation,
+            ))
+        return SamplesMessage(name_groups(grouped_samples, unique_keys, names))
 
 
 class SamplesService(Service):
@@ -104,13 +168,14 @@ class SamplesService(Service):
         samples = [iloop.Sample(s) for s in request.sample_ids]
         return PhasesMessage([PhaseMessage(**d) for d in await phases_for_samples(samples)])
 
-    @http.POST('./info', description='Information about measurements, medium and genotype changes for the given list of samples')
+    @http.POST('./info',
+               description='Information about measurements, medium and genotype changes for the given list of samples')
     async def sample_info(self, request: ModelRequestMessage) -> SamplesInfoMessage:
         iloop = iloop_from_context(self.context)
         result = await sample_in_phases_venom(request, iloop, info_for_samples)
         return SamplesInfoMessage(response={k: SampleInfoMessage(
             genotype_changes=v['genotype-changes'],
-            measurements=[MetaboliteMeasurementMessage(**i) for i in v['measurements']],
+            measurements=[MeasurementMessage(**i) for i in v['measurements']],
             medium=[MetaboliteMediumMessage(**i) for i in v['medium']],
         ) for k, v in result.items()})
 
@@ -132,10 +197,9 @@ class DataAdjustedService(Service):
         iloop = iloop_from_context(self.context)
         model_id = request.model_id or None
         result = await sample_in_phases_venom(request, iloop,
-                                      lambda samples,
-                                             scalars: theoretical_maximum_yield_for_phase(
-                                          samples, scalars,
-                                          model_id))
+                                              lambda samples, scalars: theoretical_maximum_yield_for_phase(
+                                                  samples, scalars,
+                                                  model_id))
         return MaximumYieldsMessage(
             response={k: MaximumYieldMessage(
                 growth_rate=v['growth-rate'],
@@ -145,8 +209,8 @@ class DataAdjustedService(Service):
                         wild=PhasePlaneMessage(**j['phase-planes']['wild']),
                         modified=PhasePlaneMessage(**j['phase-planes']['modified']),
                     )
-                )}
-            ) for k, v in result.items() for i, j in v['metabolites'].items()}
+                ) for i, j in v['metabolites'].items()}
+            ) for k, v in result.items()}
         )
 
     @http.POST('./fluxes', description='Calculate fluxes for given model, sample list, simulation method and map')
@@ -169,11 +233,11 @@ class DataAdjustedService(Service):
     async def sample_model(self, request: ModelRequestMessage) -> ModelsMessage:
         iloop = iloop_from_context(self.context)
         result = await sample_in_phases_venom(request, iloop,
-                                      lambda samples, scalars: model_for_phase(
-                                          samples, scalars,
-                                          with_fluxes=request.with_fluxes,
-                                          method=request.method, map=request.map,
-                                          model_id=request.model_id))
+                                              lambda samples, scalars: model_for_phase(
+                                                  samples, scalars,
+                                                  with_fluxes=request.with_fluxes,
+                                                  method=request.method, map=request.map,
+                                                  model_id=request.model_id))
         return ModelsMessage(response={k: ModelMessage(
             model=JSONValue(v['model']),
             model_id=v['model_id'],
@@ -196,7 +260,6 @@ cors = aiohttp_cors.setup(app, defaults={
         allow_credentials=True,
     )
 })
-
 
 # Configure CORS on all routes.
 for route in list(app.router.routes()):

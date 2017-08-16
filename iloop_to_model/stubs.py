@@ -7,9 +7,17 @@ class OrganismToTaxonMessage(Message):
     response = MapField(str, description='Mapping between an organism short code and taxon')
 
 
-class MetaboliteMeasurementMessage(Message):
-    id = Int(description='Metabolite ID')
-    name = String(description='Metabolite human-readable name')
+class CurrentOrganismsMessage(Message):
+    response = MapField(str, description='Mapping between organism short code and '
+                                         'full name of all strains in database')
+
+
+class MeasurementMessage(Message):
+    type = String(description='The subject of the measurement, e.g. "compound", "protein" or "reaction"')
+    id = Int(description='identifier associated with the measured subject, e.g. metabolite identifier')
+    name = String(description='In case of metabolite, human-readable name')
+    db_name = String(description='In case of xref data, the name of the database, e.g. UniProtKB')
+    mode = String(description='Quantification mode, e.g. "relative" or "quantitative"')
     measurements = repeated(Float32(description='Measurements taken during the experiment'))
     unit = String(description='Units in which measurements are taken')
 
@@ -22,7 +30,7 @@ class MetaboliteMediumMessage(Message):
 
 class SampleInfoMessage(Message):
     genotype_changes = repeated(String(description='Gnomic strings for genotype changes'))
-    measurements = repeated(MetaboliteMeasurementMessage)
+    measurements = repeated(MeasurementMessage)
     medium = repeated(MetaboliteMediumMessage)
 
 
@@ -48,7 +56,7 @@ class ModelRequestMessage(Message):
     phase_id = Int(description='Phase ID')
     map = String(description='Name of map to show')
     method = String(description='Simulation method to run')
-    with_fluxes = Bool(description='Add flux information to  the respsonse')
+    with_fluxes = Bool(description='Add flux information to  the response')
 
 
 class PhasePlaneMessage(Message):
@@ -70,7 +78,8 @@ class MetabolitePhasePlaneMessage(Message):
 
 class MaximumYieldMessage(Message):
     growth_rate = repeated(Float32(description='Growth rates collected from the experiment'))
-    metabolites = MapField(MetabolitePhasePlaneMessage, description='Data for the metabolites collected from the experiment')
+    metabolites = MapField(MetabolitePhasePlaneMessage,
+                           description='Data for the metabolites collected from the experiment')
 
 
 class ModelMessage(Message):
@@ -81,6 +90,11 @@ class ModelMessage(Message):
 
 class ExperimentsMessage(Message):
     response = repeated(ExperimentMessage)
+
+
+class ExperimentsRequestMessage(Message):
+    taxon_code = String(descripton='Species five-letter mnemonic short_code that must be associated with at least one '
+                                   'sample belonging to the  experiment')
 
 
 class SamplesRequestMessage(Message):

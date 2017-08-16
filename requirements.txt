@@ -2,13 +2,13 @@ aiohttp
 aiozmq
 aiohttp_cors
 msgpack-python
-potion_client
+potion_client>=2.5.1
 requests
 redis
 codecov
 gunicorn
 uvloop
+pytest
 pytest-asyncio==0.5.0
 pytest-cov==2.4.0
-git+https://github.com/biosustain/venom.git@feat/json#egg=venom
-
+https://github.com/biosustain/venom/archive/feat/json.zip

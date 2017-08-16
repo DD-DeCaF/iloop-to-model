@@ -44,11 +44,14 @@ def extract_medium(medium):
     :return: list of dictionaries of format
             {'id': <compound id (<database>:<id>, f.e. chebi:12345)>, 'concentration': <compound concentration (float)>}
     """
-    return [{
-                'id': 'chebi:' + str(compound['compound'].chebi_id),
-                'name': compound['compound'].chebi_name,
-                'concentration': compound['concentration']
-            } for compound in medium.read_contents()]
+    if medium is None:
+        return []
+    else:
+        return [{
+                    'id': 'chebi:' + str(compound['compound'].chebi_id),
+                    'name': compound['compound'].chebi_name,
+                    'concentration': compound['concentration']
+                } for compound in medium.read_contents()]
 
 
 def compound_ids_str(compounds):
@@ -82,7 +85,13 @@ def scalars_by_phases(samples):
     phases = defaultdict(lambda: defaultdict(list))
     for s in samples:
         for scalar in s.read_scalars():
+            scalar['type'] = 'compound'
             phases[scalar['phase'].id][scalar_test_key(scalar)].append(scalar)
+        if hasattr(s, 'read_xref_measurements'):
+            for subject_type in {'protein', 'reaction'}:
+                for xref in s.read_xref_measurements(type=subject_type):
+                    xref['type'] = subject_type
+                    phases[xref['phase'].id]['{}_{}'.format(subject_type, xref['accession'])].append(xref)
     return phases
 
 
@@ -105,17 +114,28 @@ def extract_measurements_for_phase(scalars_for_samples):
     """
     result = []
     for _, scalars in scalars_for_samples.items():
-        test = scalars[0]['test']
-        if test['type'] in {'uptake-rate', 'production-rate'} and test['numerator']['compounds']:
-            measurements = list(chain(*[s['measurements'] for s in scalars]))
-            sign = -1 if test['type'] == 'uptake-rate' else 1
-            product = test['numerator']['compounds'][0]
+        scalar_type = scalars[0]['type']
+        if scalar_type == 'compound':
+            test = scalars[0]['test']
+            if test['type'] in {'uptake-rate', 'production-rate'} and test['numerator']['compounds']:
+                measurements = list(chain(*[s['measurements'] for s in scalars]))
+                sign = -1 if test['type'] == 'uptake-rate' else 1
+                product = test['numerator']['compounds'][0]
+                result.append(dict(
+                    id='chebi:' + str(product.chebi_id),
+                    name=product.chebi_name,
+                    measurements=[m * sign for m in measurements],
+                    unit=test['numerator']['unit'],
+                    type=scalar_type
+                ))
+        elif scalar_type in {'protein', 'reaction'}:
             result.append(dict(
-                id='chebi:' + str(product.chebi_id),
-                name=product.chebi_name,
-                measurements=[m * sign for m in measurements],
-                unit=test['numerator']['unit'],
-            ))
+                type=scalar_type,
+                id=scalars[0]['accession'],
+                db_name=scalars[0]['db_name'],
+                mode=scalars[0]['mode'],
+                measurements=[s['value'] for s in scalars]
+                ))
     return result
 
 
@@ -172,10 +192,9 @@ async def model_options_for_samples(sample):
     """
     species = ILOOP_SPECIES_TO_TAXON[sample.strain.organism.short_code]
     url = '{}/model-options/{}'.format(os.environ['MODEL_API'], species)
-    print(url)
     async with aiohttp.ClientSession() as session:
         async with session.get(url) as r:
-            assert r.status == 200
+            assert r.status == 200, f'response status {r.status} from model service'
             return await r.json()
 
 
@@ -186,13 +205,12 @@ async def make_request(model_id, message):
     :param message: dict
     :return: response for the service as dict
     """
-    print(message)
     async with aiohttp.ClientSession(headers={'Content-Type': 'application/json'}) as session:
         async with session.post(
                 '{}/models/{}'.format(os.environ['MODEL_API'], model_id),
                 data=json.dumps({'message': message})
         ) as r:
-            print(r)
+            assert r.status == 200, f'response status {r.status} from model service'
             return await r.json()
 
 
@@ -298,7 +316,7 @@ async def theoretical_maximum_yield_for_phase(samples, scalars, model_id=None):
     measurements = extract_measurements_for_phase(scalars)
     compound_ids = [m['id'] for m in measurements]
     tmy_modified, tmy_wild_type = await asyncio.gather(*[
-        tmy(model_id, message_for_adjust(samples, scalars), compound_ids),
+        tmy(model_id, message_for_adjust(samples), compound_ids),
         tmy(model_id, {}, compound_ids)
     ])
     result = {
