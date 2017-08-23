@@ -52,13 +52,13 @@ scalars = [{'measurements': [0.0, 0.0],
 
 xrefs = dict(
     reaction=[
-        {'accession': 'ENO', 'value': 14.1, 'mode': 'quantitative', 'type': 'reaction', 'db_name': 'BiGG',
+        {'accession': 'ENO', 'value': 14.1, 'mode': 'quantitative', 'type': 'reaction', 'db_name': 'bigg.reaction',
          'phase': phase},
-        {'accession': 'DHAD1m', 'value': 0.166, 'mode': 'quantitative', 'type': 'reaction', 'db_name': 'BiGG',
+        {'accession': 'DHAD1m', 'value': 0.166, 'mode': 'quantitative', 'type': 'reaction', 'db_name': 'bigg.reaction',
          'phase': phase},
-        {'accession': 'NH4t', 'value': 1.02, 'mode': 'quantitative', 'type': 'reaction', 'db_name': 'BiGG',
+        {'accession': 'NH4t', 'value': 1.02, 'mode': 'quantitative', 'type': 'reaction', 'db_name': 'bigg.reaction',
          'phase': phase},
-        {'accession': 'SUCCtm', 'value': 0.2, 'mode': 'quantitative', 'type': 'reaction', 'db_name': 'BiGG',
+        {'accession': 'SUCCtm', 'value': 0.2, 'mode': 'quantitative', 'type': 'reaction', 'db_name': 'bigg.reaction',
          'phase': phase},
     ],
     protein=[
