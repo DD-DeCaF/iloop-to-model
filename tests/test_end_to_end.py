@@ -16,13 +16,12 @@ class TestUM:
         self.taxon_code = ILOOP_SPECIES_TO_TAXON[self.organism_code]
         self.model = {'ECO': 'iJO1366', 'SCE': 'iMM904'}[self.organism_code]
 
-
     def test_request(self):
         payload = {
             'sampleIds': self.sample_ids,
             'phaseId': 1,
             'withFluxes': True,
-            'method': 'room',
+            'method': 'pfba',
             'modelId': 'iJO1366',
         }
         get_queries = {
