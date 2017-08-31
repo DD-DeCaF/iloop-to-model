@@ -305,7 +305,7 @@ async def theoretical_maximum_yield_for_phase(samples, scalars, model_id=None):
     """
     if model_id is None:
         model_id = sample_model_id(samples[0])
-    growth_rate_scalars = [sc for _, sc in scalars.items() if sc[0]['test']['type'] == 'growth-rate']
+    growth_rate_scalars = [sc for _, sc in scalars.items() if sc[0].get('test', {}).get('type', '') == 'growth-rate']
     # should get no growth rate or one list of measurements
     if len(growth_rate_scalars) == 1:
         growth_rate = dict(measurements=list(chain(*[s['measurements'] for s in growth_rate_scalars[0]])))
@@ -314,7 +314,8 @@ async def theoretical_maximum_yield_for_phase(samples, scalars, model_id=None):
     else:
         raise RuntimeError('unexpected number of measured growth rates for sample group')
     measurements = extract_measurements_for_phase(scalars)
-    compound_ids = [m['id'] for m in measurements]
+    compound_measurements = [m for m in measurements if m['type'] == 'compound']
+    compound_ids = [m['id'] for m in compound_measurements]
     tmy_modified, tmy_wild_type = await asyncio.gather(*[
         tmy(model_id, message_for_adjust(samples), compound_ids),
         tmy(model_id, {}, compound_ids)
@@ -323,7 +324,7 @@ async def theoretical_maximum_yield_for_phase(samples, scalars, model_id=None):
         'growth-rate': growth_rate['measurements'],
         'metabolites': {}
     }
-    for compound in measurements:
+    for compound in compound_measurements:
         result['metabolites'][compound['name']] = {
             'flux': compound['measurements'],
             'phase-planes': {

@@ -59,8 +59,8 @@ class SpeciesService(Service):
     async def current_species(self) -> CurrentOrganismsMessage:
         iloop = iloop_from_context(self.context)
         return CurrentOrganismsMessage(
-            dict((ILOOP_SPECIES_TO_TAXON[s.organism.short_code], s.organism.name)
-                 for s in iloop.Strain.instances()))
+            dict((ILOOP_SPECIES_TO_TAXON[o.short_code], o.name)
+                 for o in iloop.Organism.instances()))
 
 
 def group_id(sample):
