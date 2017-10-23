@@ -60,7 +60,7 @@ class SpeciesService(Service):
         iloop = iloop_from_context(self.context)
         return CurrentOrganismsMessage(
             dict((ILOOP_SPECIES_TO_TAXON[o.short_code], o.name)
-                 for o in iloop.Organism.instances()))
+                 for o in iloop.Organism.instances() if o.short_code in Default.ORGANISMS_WITH_MAPS))
 
 
 def group_id(sample):
