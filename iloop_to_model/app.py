@@ -158,6 +158,16 @@ class ExperimentsService(Service):
         return SamplesMessage(name_groups(grouped_samples, unique_keys, names))
 
 
+def merge_duplicated_metabolites(medium):
+    result = []
+    added = set()
+    for m in medium:
+        if m['id'] not in added:
+            result.append(m)
+            added.add(m['id'])
+    return result
+
+
 class SamplesService(Service):
     class Meta:
         name = 'samples'
@@ -176,7 +186,7 @@ class SamplesService(Service):
         return SamplesInfoMessage(response={k: SampleInfoMessage(
             genotype_changes=v['genotype-changes'],
             measurements=[MeasurementMessage(**i) for i in v['measurements']],
-            medium=[MetaboliteMediumMessage(**i) for i in v['medium']],
+            medium=[MetaboliteMediumMessage(**i) for i in merge_duplicated_metabolites(v['medium'])],
         ) for k, v in result.items()})
 
     @http.POST('./model-options',
