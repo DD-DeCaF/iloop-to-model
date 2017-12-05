@@ -1,8 +1,8 @@
 FROM python:3.6-slim
-
+RUN apt-get update \
+    && apt-get install -y gcc && apt-get install -y build-essential python-dev
 RUN apt-get update && apt-get -y upgrade && \
     apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
-
 
 RUN pip install --upgrade pip setuptools wheel
 COPY requirements.txt /tmp/requirements.txt

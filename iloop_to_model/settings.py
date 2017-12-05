@@ -10,6 +10,8 @@ class Default(object):
         'PPU': 'iJN746',
     }
 
+    ORGANISMS_WITH_MAPS = {'ECO', 'SCE', 'PPU'}
+
     ILOOP_API = os.environ['ILOOP_API']
     ILOOP_TOKEN = os.environ['ILOOP_TOKEN']
 
