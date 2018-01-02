@@ -14,6 +14,7 @@ class Default(object):
 
     ILOOP_API = os.environ['ILOOP_API']
     ILOOP_TOKEN = os.environ['ILOOP_TOKEN']
+    SENTRY_DSN = os.environ.get('SENTRY_DSN', '')
 
     REDIRECTS = {
         'iloop.biosustain.dtu.dk': 'https://iloop.biosustain.dtu.dk/api',
