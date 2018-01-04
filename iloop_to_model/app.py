@@ -2,6 +2,7 @@ import asyncio
 from itertools import groupby
 from collections import namedtuple
 
+from aiohttp import web
 import aiohttp_cors
 from venom.rpc import Service, Venom
 from venom.rpc.comms.aiohttp import create_app
@@ -14,6 +15,7 @@ from iloop_to_model.iloop_to_model import (
     model_options_for_samples,
     phases_for_samples, scalars_by_phases, theoretical_maximum_yield_for_phase,
     ILOOP_SPECIES_TO_TAXON)
+from iloop_to_model.middleware import raven_middleware
 from iloop_to_model.settings import Default
 from iloop_to_model.stubs import *
 
@@ -261,7 +263,7 @@ venom.add(ExperimentsService)
 venom.add(SamplesService)
 venom.add(DataAdjustedService)
 venom.add(ReflectService)
-app = create_app(venom)
+app = create_app(venom, web.Application(middlewares=[raven_middleware]))
 # Configure default CORS settings.
 cors = aiohttp_cors.setup(app, defaults={
     "*": aiohttp_cors.ResourceOptions(
