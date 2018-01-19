@@ -1,6 +1,5 @@
 import asyncio
 import json
-import os
 from collections import defaultdict
 from copy import deepcopy
 from itertools import chain
@@ -125,7 +124,11 @@ def extract_measurements_for_phase(scalars_for_samples):
                     id='chebi:' + str(product.chebi_id),
                     name=product.chebi_name,
                     measurements=[m * sign for m in measurements],
-                    unit=test['numerator']['unit'],
+                    units={
+                        'numerator': test['numerator']['unit'],
+                        'denominator': test['denominator']['unit'],
+                    },
+                    rate=test['rate'],
                     type=scalar_type
                 ))
         elif scalar_type in {'protein', 'reaction'}:
@@ -191,7 +194,7 @@ async def model_options_for_samples(sample):
     :param sample: ILoop sample object
     """
     species = ILOOP_SPECIES_TO_TAXON[sample.strain.organism.short_code]
-    url = '{}/model-options/{}'.format(os.environ['MODEL_API'], species)
+    url = '{}/model-options/{}'.format(Default.MODEL_API, species)
     async with aiohttp.ClientSession() as session:
         async with session.get(url) as r:
             assert r.status == 200, f'response status {r.status} from model service'
@@ -207,7 +210,7 @@ async def make_request(model_id, message):
     """
     async with aiohttp.ClientSession(headers={'Content-Type': 'application/json'}) as session:
         async with session.post(
-                '{}/models/{}'.format(os.environ['MODEL_API'], model_id),
+                '{}/models/{}'.format(Default.MODEL_API, model_id),
                 data=json.dumps({'message': message})
         ) as r:
             assert r.status == 200, f'response status {r.status} from model service'

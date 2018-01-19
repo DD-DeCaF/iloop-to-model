@@ -6,13 +6,15 @@ services:
       dockerfile: Dockerfile
     ports:
       - "${ILOOP_TO_MODEL_PORT:-7000}:7000"
+    volumes:
+      - '.:/iloop-to-model'
     environment:
       - PYTHONUNBUFFERED=1
       - PYTHONASYNCIODEBUG=1
       - ILOOP_TOKEN
       - ILOOP_API=${ILOOP_API:-http://iloop-backend:80/api}
       - MODEL_API=${MODEL_API:-http://model-backend:8000}
-    command: ["-w", "1", "-b", "0.0.0.0:7000", "-t", "150", "-k", "aiohttp.worker.GunicornWebWorker", "iloop_to_model.app:app"]
+    command: ["-w", "1", "-b", "0.0.0.0:7000", "-t", "150", "-k", "aiohttp.worker.GunicornWebWorker", "--reload", "iloop_to_model.app:app"]
     networks:
       iloop:
         aliases:

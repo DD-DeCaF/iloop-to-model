@@ -19,7 +19,8 @@ class MeasurementMessage(Message):
     db_name = String(description='In case of xref data, the miriam name of the database, e.g. uniprot')
     mode = String(description='Quantification mode, e.g. "relative" or "quantitative"')
     measurements = repeated(Float32(description='Measurements taken during the experiment'))
-    unit = String(description='Units in which measurements are taken')
+    units = MapField(str, description='Units in which measurements are taken')
+    rate = String(description='Rate')
 
 
 class MetaboliteMediumMessage(Message):
