@@ -124,7 +124,11 @@ def extract_measurements_for_phase(scalars_for_samples):
                     id='chebi:' + str(product.chebi_id),
                     name=product.chebi_name,
                     measurements=[m * sign for m in measurements],
-                    unit=test['numerator']['unit'],
+                    units={
+                        'numerator': test['numerator']['unit'],
+                        'denominator': test['denominator']['unit'],
+                    },
+                    rate=test['rate'],
                     type=scalar_type
                 ))
         elif scalar_type in {'protein', 'reaction'}:
