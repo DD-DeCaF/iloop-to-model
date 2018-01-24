@@ -86,6 +86,7 @@ class MaximumYieldMessage(Message):
 class ModelMessage(Message):
     model_id = String(description='The saved model ID which can be used for retrieving cached information')
     fluxes = map_(Float32())  # TODO: fix not implemented while trying to add description
+    growth_rate = Float32(description='Growth rate for this simulation')
     model: JSONValue
 
 

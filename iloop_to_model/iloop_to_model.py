@@ -147,6 +147,7 @@ MEDIUM = 'medium'
 MEASUREMENTS = 'measurements'
 REACTIONS = 'reactions-knockout'
 MODEL = 'model'
+GROWTH_RATE = 'growth-rate'
 FLUXES = 'fluxes'
 TMY = 'tmy'
 OBJECTIVES = 'objectives'
@@ -348,7 +349,7 @@ async def model_json(model_id, adjust_message, with_fluxes=True, method=None, ma
     :return: model as dict
     """
     return_message = {
-        'to-return': [MODEL, FLUXES] if with_fluxes else [MODEL],
+        'to-return': [MODEL, FLUXES, GROWTH_RATE] if with_fluxes else [MODEL, GROWTH_RATE],
     }
     if method:
         return_message['simulation-method'] = method
