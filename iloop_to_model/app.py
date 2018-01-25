@@ -253,6 +253,8 @@ class DataAdjustedService(Service):
         return ModelsMessage(response={k: ModelMessage(
             model=JSONValue(v['model']),
             model_id=v['model_id'],
+            # if the growth rate is 0.0, venom detects the field as undefined
+            growth_rate=v['growth-rate'] + 1e-106,
             fluxes=v.get('fluxes')
         ) for k, v in result.items()})
 
