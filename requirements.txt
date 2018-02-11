@@ -11,5 +11,5 @@ uvloop
 pytest
 pytest-asyncio==0.5.0
 pytest-cov==2.4.0
-https://github.com/biosustain/venom/archive/feat/json.zip
+venom==2.0.0
 raven==6.4.0

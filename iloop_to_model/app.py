@@ -253,6 +253,7 @@ class DataAdjustedService(Service):
         return ModelsMessage(response={k: ModelMessage(
             model=JSONValue(v['model']),
             model_id=v['model_id'],
+            growth_rate=v['growth-rate'],
             fluxes=v.get('fluxes')
         ) for k, v in result.items()})
 
