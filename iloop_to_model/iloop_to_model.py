@@ -157,6 +157,15 @@ def sample_model_id(sample):
     return Default.ORGANISM_TO_MODEL[sample.strain.organism.short_code]
 
 
+# TODO: clear definition of how to add oxygen to experimental conditions
+def is_aerobic(sample):
+    return 'oxygen' in sample.experiment.attributes.get('conditions', {}).get('gas', '')
+
+
+def add_dioxygen_to_medium(medium):
+    medium.append({'id': 'chebi:10745', 'name': 'dioxygen'})
+
+
 def message_for_adjust(samples, scalars=None):
     """Extract information about genotype changes, medium definitions and measurements if scalars are given
     If no phase is given, do not add measurements.
@@ -170,6 +179,8 @@ def message_for_adjust(samples, scalars=None):
     sample_names = ','.join(s.name for s in samples)
     logger.info('Genotype changes for sample {} are ready'.format(sample_names))
     medium = extract_medium(sample.medium) + extract_medium(sample.feed_medium)
+    if is_aerobic(sample):
+        add_dioxygen_to_medium(medium)
     logger.info('Medium for sample {} are ready'.format(sample_names))
     measurements = extract_measurements_for_phase(scalars) if scalars else []
     logger.info('Measurements for sample {} are ready'.format(sample_names))
