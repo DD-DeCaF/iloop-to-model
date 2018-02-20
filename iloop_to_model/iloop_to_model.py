@@ -159,7 +159,7 @@ def sample_model_id(sample):
 
 # TODO: clear definition of how to add oxygen to experimental conditions
 def is_aerobic(sample):
-    return 'oxygen' in sample.experiment.attributes['conditions'].get('gas', '')
+    return 'oxygen' in sample.experiment.attributes.get('conditions', {}).get('gas', '')
 
 
 def add_dioxygen_to_medium(medium):
