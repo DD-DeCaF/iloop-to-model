@@ -3,13 +3,15 @@ from collections import namedtuple
 import pytest
 
 from iloop_to_model.iloop_to_model import (
-    MEASUREMENTS, MEDIUM, extract_genotype_changes, message_for_adjust, phases_for_samples, scalars_by_phases
+    MEASUREMENTS, MEDIUM, extract_genotype_changes, message_for_adjust, phases_for_samples, scalars_by_phases,
+
 )
 from iloop_to_model.app import name_groups
 
 Sample = namedtuple('Sample',
-                    ['id', 'strain', 'medium', 'feed_medium', 'read_scalars', 'name', 'read_xref_measurements'])
+                    ['id', 'strain', 'medium', 'feed_medium', 'read_scalars', 'name', 'read_xref_measurements', 'experiment'])
 Strain = namedtuple('Strain', ['organism', 'parent_strain', 'pool', 'parent_pool', 'genotype'])
+Experiment = namedtuple('Experiment', ['attributes'])
 Medium = namedtuple('Medium', ['read_contents'])
 Product = namedtuple('Product', ['chebi_id', 'chebi_name'])
 Phase = namedtuple('Phase', ['id', 'title', 'start', 'end'])
@@ -19,6 +21,9 @@ Pool = namedtuple('Pool', ['parent_pool', 'genotype'])
 organism = Organism('ECO')
 p1 = Product(16828, 'first')
 p2 = Product(17895, 'second')
+experiment_aerobic = Experiment({'conditions': {'gas': 'air + oxygen'}})
+experiment_anaerobic = Experiment({'conditions': {}})
+experiment_tricky = Experiment({'conditions': {'gas': 'absolutely NO oxygen'}})
 medium = Medium(lambda: [{'compound': p1, 'concentration': 0.01}, {'compound': p2, 'concentration': 0.02}])
 phase = Phase(1, 'phase1', 0, 14)
 pool = Pool(None, '+pool_gene')
@@ -68,9 +73,9 @@ xrefs = dict(
          'phase': phase}
     ])
 
-s1 = Sample(1, strain, medium, medium, lambda: scalars, 'S1', lambda type: xrefs[type])
-s2 = Sample(2, strain, medium, medium, lambda: scalars, 'S2', lambda type: xrefs[type])
-s3 = Sample(3, strain, medium, medium, lambda: scalars, 'S3', lambda type: xrefs[type])
+s1 = Sample(1, strain, medium, medium, lambda: scalars, 'S1', lambda type: xrefs[type], experiment_aerobic)
+s2 = Sample(2, strain, medium, medium, lambda: scalars, 'S2', lambda type: xrefs[type], experiment_anaerobic)
+s3 = Sample(3, strain, medium, medium, lambda: scalars, 'S3', lambda type: xrefs[type], experiment_tricky)
 samples_args = [[s1], [s1, s2]]
 
 
@@ -81,8 +86,12 @@ def test_message_for_adjust(samples):
     grouped_scalars_phase1 = scalars_by_phases(samples)[1]
     message = message_for_adjust(samples, grouped_scalars_phase1)
     assert len(message[MEASUREMENTS]) == 8
-    assert len(message[MEDIUM]) == 4
+    assert len(message[MEDIUM]) == 5
     assert extract_genotype_changes(strain) == ['+pool_gene', '+Aac']
+    message_anaerobic = message_for_adjust([s2])
+    assert len(message_anaerobic[MEDIUM]) == 4
+    message_tricky = message_for_adjust([s3])
+    assert len(message_tricky[MEDIUM]) == 5
 
 
 @pytest.mark.asyncio
