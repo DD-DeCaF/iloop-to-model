@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from venom.fields import MapField, Int, String, repeated, map_, Float32, Bool
-from venom.message import Message
 from venom.common.messages import JSONValue
+from venom.fields import Bool, Float32, Int, MapField, String, map_, repeated
+from venom.message import Message
 
 
 class OrganismToTaxonMessage(Message):

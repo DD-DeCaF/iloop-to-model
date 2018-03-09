@@ -15,8 +15,8 @@
 import requests
 
 from iloop_to_model import iloop_client
-from iloop_to_model.settings import Default
 from iloop_to_model.iloop_to_model import ILOOP_SPECIES_TO_TAXON
+from iloop_to_model.settings import Default
 
 
 class TestUM:
