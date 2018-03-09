@@ -38,9 +38,7 @@ setup_logging(handler)
 
 @lru_cache(128)
 def iloop_client(api, token):
-    requests.packages.urllib3.disable_warnings()
     return Client(
         api,
         auth=HTTPBearerAuth(token),
-        verify=False
     )
