@@ -14,7 +14,7 @@ services:
       - ILOOP_TOKEN
       - ILOOP_API=${ILOOP_API:-http://iloop-backend:80/api}
       - MODEL_API=${MODEL_API:-http://model-backend:8000}
-    command: ["-w", "1", "-b", "0.0.0.0:7000", "-t", "150", "-k", "aiohttp.worker.GunicornWebWorker", "--reload", "iloop_to_model.app:app"]
+    command: ["gunicorn", "-w", "1", "-b", "0.0.0.0:7000", "-t", "150", "-k", "aiohttp.worker.GunicornWebWorker", "--reload", "iloop_to_model.app:app"]
     networks:
       iloop:
         aliases:
