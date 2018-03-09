@@ -145,7 +145,7 @@ class ExperimentsService(Service):
         iloop = iloop_from_context(self.context)
         experiments = [e for e in iloop.Experiment.instances(where=dict(type='fermentation')) if
                        request.taxon_code in {ILOOP_SPECIES_TO_TAXON[s.strain.organism.short_code] for s in
-                                                 e.read_samples()}]
+                       e.read_samples()}]
         return ExperimentsMessage([ExperimentMessage(id=experiment.id, name=experiment.identifier)
                                    for experiment in experiments])
 
