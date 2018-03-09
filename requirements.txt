@@ -8,8 +8,13 @@ redis
 codecov
 gunicorn
 uvloop
+venom==2.0.0
+raven==6.4.0
+
+# Testing and QA
+flake8
 pytest
 pytest-asyncio==0.5.0
 pytest-cov==2.4.0
-venom==2.0.0
-raven==6.4.0
+codecov
+isort

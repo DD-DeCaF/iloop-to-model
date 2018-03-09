@@ -16,6 +16,9 @@ start:
 	docker network inspect iloop || docker network create iloop
 	docker-compose up -d --build
 
+## Run all QA targets
+.PHONY: qa
+qa: test flake8 isort license
 
 ## Run the tests
 test: start
@@ -23,6 +26,20 @@ test: start
 	@echo "* Running tests."
 	@echo "**********************************************************************"
 	docker-compose exec web /bin/bash -c "py.test -vxs --cov=./iloop_to_model tests/"
+
+## Run flake8
+.PHONY: flake8
+flake8:
+	docker-compose run --rm web flake8 iloop_to_model tests
+
+## Check import sorting
+.PHONY: isort
+isort:
+	docker-compose run --rm web isort --check-only --recursive iloop_to_model tests
+
+## Sort imports and write changes to files
+isort-save:
+	docker-compose run --rm web isort --recursive iloop_to_model tests
 
 ## Verify license headers in source files
 license:

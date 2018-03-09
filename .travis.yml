@@ -27,7 +27,7 @@ install:
   - make start
   
 script:
-  - make test
+  - make qa
   - docker-compose logs
   - ./scripts/verify_license_headers.sh iloop_to_model tests
   
