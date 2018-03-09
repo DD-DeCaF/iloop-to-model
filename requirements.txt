@@ -9,7 +9,7 @@ codecov
 gunicorn
 uvloop
 venom==2.0.0
-raven==6.4.0
+raven>=6.6.0,<6.7
 
 # Testing and QA
 flake8
