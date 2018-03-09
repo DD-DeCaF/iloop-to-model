@@ -29,7 +29,12 @@ from iloop_to_model.iloop_to_model import (
     model_options_for_samples, phases_for_samples, scalars_by_phases, theoretical_maximum_yield_for_phase)
 from iloop_to_model.middleware import raven_middleware
 from iloop_to_model.settings import Default
-from iloop_to_model.stubs import *
+from iloop_to_model.stubs import (
+    CurrentOrganismsMessage, ExperimentMessage, ExperimentsMessage, ExperimentsRequestMessage, JSONValue,
+    MaximumYieldMessage, MaximumYieldsMessage, MeasurementMessage, MetaboliteMediumMessage, MetabolitePhasePlaneMessage,
+    ModelMessage, ModelRequestMessage, ModelsMessage, OrganismToTaxonMessage, PhaseMessage, PhasePlaneMessage,
+    PhasePlanesMessage, PhasesMessage, SampleInfoMessage, SampleMessage, SampleModelsMessage, SamplesInfoMessage,
+    SamplesMessage, SamplesRequestMessage)
 
 
 NamedSample = namedtuple('NamedSample', 'pool medium feed_medium operation')
