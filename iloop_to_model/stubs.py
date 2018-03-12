@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 from venom.fields import MapField, Int, String, repeated, map_, Float32, Bool
 from venom.message import Message
 from venom.common.messages import JSONValue
