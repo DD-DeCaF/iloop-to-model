@@ -23,7 +23,8 @@ from iloop_to_model.iloop_to_model import (
 from iloop_to_model.app import name_groups
 
 Sample = namedtuple('Sample',
-                    ['id', 'strain', 'medium', 'feed_medium', 'read_scalars', 'name', 'read_xref_measurements', 'experiment'])
+                    ['id', 'strain', 'medium', 'feed_medium', 'read_scalars', 'name', 'read_xref_measurements',
+                     'experiment'])
 Strain = namedtuple('Strain', ['organism', 'parent_strain', 'pool', 'parent_pool', 'genotype'])
 Experiment = namedtuple('Experiment', ['attributes'])
 Medium = namedtuple('Medium', ['read_contents'])

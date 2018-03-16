@@ -61,10 +61,10 @@ def extract_medium(medium):
         return []
     else:
         return [{
-                    'id': 'chebi:' + str(compound['compound'].chebi_id),
-                    'name': compound['compound'].chebi_name,
-                    'concentration': compound['concentration']
-                } for compound in medium.read_contents()]
+            'id': 'chebi:' + str(compound['compound'].chebi_id),
+            'name': compound['compound'].chebi_name,
+            'concentration': compound['concentration']
+        } for compound in medium.read_contents()]
 
 
 def compound_ids_str(compounds):
@@ -152,7 +152,7 @@ def extract_measurements_for_phase(scalars_for_samples):
                 db_name=scalars[0]['db_name'],
                 mode=scalars[0]['mode'],
                 measurements=[s['value'] for s in scalars]
-                ))
+            ))
     return result
 
 
@@ -164,7 +164,7 @@ MODEL = 'model'
 GROWTH_RATE = 'growth-rate'
 FLUXES = 'fluxes'
 TMY = 'tmy'
-OBJECTIVES = 'objectives'
+OBJECTIVES = 'theoretical-objectives'
 
 
 def sample_model_id(sample):
@@ -346,7 +346,7 @@ async def theoretical_maximum_yield_for_phase(samples, scalars, model_id=None):
     compound_measurements = [m for m in measurements if m['type'] == 'compound']
     compound_ids = [m['id'] for m in compound_measurements]
     tmy_modified, tmy_wild_type = await asyncio.gather(*[
-        tmy(model_id, message_for_adjust(samples), compound_ids),
+        tmy(model_id, message_for_adjust(samples, scalars), compound_ids),
         tmy(model_id, {}, compound_ids)
     ])
     result = {
