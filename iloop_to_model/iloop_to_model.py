@@ -145,6 +145,17 @@ def extract_measurements_for_phase(scalars_for_samples):
                     rate=test['rate'],
                     type=scalar_type
                 ))
+            elif test['type'] == 'growth-rate':
+                result.append({
+                    'name': 'growth rate',
+                    'measurements': list(chain(*[s['measurements'] for s in scalars])),
+                    'units': {
+                        'numerator': test['numerator']['unit'] if test['numerator'] else None,
+                        'denominator': test['denominator']['unit'] if test['denominator'] else None,
+                    },
+                    'rate': test['rate'],
+                    'type': 'growth-rate',
+                })
         elif scalar_type in {'protein', 'reaction'}:
             result.append(dict(
                 type=scalar_type,
