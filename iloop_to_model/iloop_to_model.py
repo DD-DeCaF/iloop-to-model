@@ -149,9 +149,15 @@ def extract_measurements_for_phase(scalars_for_samples):
             result.append(dict(
                 type=scalar_type,
                 id=scalars[0]['accession'],
+                name=scalars[0]['accession'],
                 db_name=scalars[0]['db_name'],
                 mode=scalars[0]['mode'],
-                measurements=[s['value'] for s in scalars]
+                measurements=[s['value'] for s in scalars],
+                units={
+                    'numerator': 'mmol',
+                    'denominator': 'g',
+                },
+                rate='h'
             ))
     return result
 
