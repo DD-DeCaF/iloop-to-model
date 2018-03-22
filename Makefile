@@ -1,4 +1,4 @@
-.PHONY: start stop clean test
+.PHONY: start test license stop clean
 
 #################################################################################
 # GLOBALS                                                                       #
@@ -24,6 +24,9 @@ test: start
 	@echo "**********************************************************************"
 	docker-compose exec web /bin/bash -c "py.test -vxs --cov=./iloop_to_model tests/"
 
+## Verify license headers in source files
+license:
+	./scripts/verify_license_headers.sh iloop_to_model tests
 
 ## Shut down the Docker containers.
 stop:

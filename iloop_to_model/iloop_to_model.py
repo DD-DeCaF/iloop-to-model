@@ -1,3 +1,17 @@
+# Copyright 2018 Novo Nordisk Foundation Center for Biosustainability, DTU.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import asyncio
 import json
 from collections import defaultdict
@@ -47,10 +61,10 @@ def extract_medium(medium):
         return []
     else:
         return [{
-                    'id': 'chebi:' + str(compound['compound'].chebi_id),
-                    'name': compound['compound'].chebi_name,
-                    'concentration': compound['concentration']
-                } for compound in medium.read_contents()]
+            'id': 'chebi:' + str(compound['compound'].chebi_id),
+            'name': compound['compound'].chebi_name,
+            'concentration': compound['concentration']
+        } for compound in medium.read_contents()]
 
 
 def compound_ids_str(compounds):
@@ -131,14 +145,31 @@ def extract_measurements_for_phase(scalars_for_samples):
                     rate=test['rate'],
                     type=scalar_type
                 ))
+            elif test['type'] == 'growth-rate':
+                result.append({
+                    'name': 'growth rate',
+                    'measurements': list(chain(*[s['measurements'] for s in scalars])),
+                    'units': {
+                        'numerator': test['numerator']['unit'] if test['numerator'] else None,
+                        'denominator': test['denominator']['unit'] if test['denominator'] else None,
+                    },
+                    'rate': test['rate'],
+                    'type': 'growth-rate',
+                })
         elif scalar_type in {'protein', 'reaction'}:
             result.append(dict(
                 type=scalar_type,
                 id=scalars[0]['accession'],
+                name=scalars[0]['accession'],
                 db_name=scalars[0]['db_name'],
                 mode=scalars[0]['mode'],
-                measurements=[s['value'] for s in scalars]
-                ))
+                measurements=[s['value'] for s in scalars],
+                units={
+                    'numerator': 'mmol',
+                    'denominator': 'g',
+                },
+                rate='h'
+            ))
     return result
 
 
@@ -150,7 +181,7 @@ MODEL = 'model'
 GROWTH_RATE = 'growth-rate'
 FLUXES = 'fluxes'
 TMY = 'tmy'
-OBJECTIVES = 'objectives'
+OBJECTIVES = 'theoretical-objectives'
 
 
 def sample_model_id(sample):
@@ -332,7 +363,7 @@ async def theoretical_maximum_yield_for_phase(samples, scalars, model_id=None):
     compound_measurements = [m for m in measurements if m['type'] == 'compound']
     compound_ids = [m['id'] for m in compound_measurements]
     tmy_modified, tmy_wild_type = await asyncio.gather(*[
-        tmy(model_id, message_for_adjust(samples), compound_ids),
+        tmy(model_id, message_for_adjust(samples, scalars), compound_ids),
         tmy(model_id, {}, compound_ids)
     ])
     result = {
