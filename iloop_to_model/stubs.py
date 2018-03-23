@@ -72,6 +72,7 @@ class ModelRequestMessage(Message):
     map = String(description='Name of map to show')
     method = String(description='Simulation method to run')
     with_fluxes = Bool(description='Add flux information to  the response')
+    objective = String(description='Reaction ID to be set as objective')
 
 
 class PhasePlaneMessage(Message):

@@ -16,7 +16,6 @@ import logging
 import sys
 from functools import lru_cache
 
-import requests
 from potion_client import Client
 from potion_client.auth import HTTPBearerAuth
 from raven import Client as RavenClient

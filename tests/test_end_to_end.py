@@ -37,6 +37,7 @@ class TestUM:
             'withFluxes': True,
             'method': 'pfba',
             'modelId': 'iJO1366',
+            'objective': 'EX_etoh_e',
         }
         get_queries = {
             '/species',
