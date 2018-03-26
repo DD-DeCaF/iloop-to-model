@@ -1,4 +1,7 @@
 FROM python:3.6-slim
+
+ENV PYTHONUNBUFFERED 1
+
 RUN apt-get update \
     && apt-get install -y gcc && apt-get install -y build-essential python-dev
 RUN apt-get update && apt-get -y upgrade && \
