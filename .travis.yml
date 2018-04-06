@@ -25,12 +25,11 @@ before_install:
 
 install:
   - make start
-  
+
 script:
-  - make test
+  - make qa
   - docker-compose logs
-  - ./scripts/verify_license_headers.sh iloop_to_model tests
-  
+
 after_success:
   - docker-compose exec web /bin/bash -c "codecov --token $CODECOV_TOKEN"
 

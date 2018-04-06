@@ -16,11 +16,10 @@ from collections import namedtuple
 
 import pytest
 
-from iloop_to_model.iloop_to_model import (
-    MEASUREMENTS, MEDIUM, extract_genotype_changes, message_for_adjust, phases_for_samples, scalars_by_phases,
-
-)
 from iloop_to_model.app import name_groups
+from iloop_to_model.iloop_to_model import (
+    MEASUREMENTS, MEDIUM, extract_genotype_changes, message_for_adjust, phases_for_samples, scalars_by_phases)
+
 
 Sample = namedtuple('Sample',
                     ['id', 'strain', 'medium', 'feed_medium', 'read_scalars', 'name', 'read_xref_measurements',

@@ -1,4 +1,7 @@
 FROM python:3.6-slim
+
+ENV PYTHONUNBUFFERED 1
+
 RUN apt-get update \
     && apt-get install -y gcc && apt-get install -y build-essential python-dev
 RUN apt-get update && apt-get -y upgrade && \
@@ -14,5 +17,4 @@ WORKDIR iloop-to-model
 
 ENV PYTHONPATH $PYTHONPATH:/iloop-to-model
 
-ENTRYPOINT ["gunicorn"]
-CMD ["-w", "4", "-b", "0.0.0.0:7000", "-t", "150", "-k", "aiohttp.worker.GunicornWebWorker", "iloop_to_model.app:app"]
+CMD ["gunicorn", "-w", "4", "-b", "0.0.0.0:7000", "-t", "150", "-k", "aiohttp.worker.GunicornWebWorker", "iloop_to_model.app:app"]

@@ -13,11 +13,11 @@
 # limitations under the License.
 
 import asyncio
-from itertools import groupby
 from collections import namedtuple
+from itertools import groupby
 
-from aiohttp import web
 import aiohttp_cors
+from aiohttp import web
 from venom.rpc import Service, Venom
 from venom.rpc.comms.aiohttp import create_app
 from venom.rpc.method import http
@@ -25,13 +25,17 @@ from venom.rpc.reflect.service import ReflectService
 
 from iloop_to_model import iloop_client, logger
 from iloop_to_model.iloop_to_model import (
-    fluxes_for_phase, gather_for_phases, info_for_samples, model_for_phase,
-    model_options_for_samples,
-    phases_for_samples, scalars_by_phases, theoretical_maximum_yield_for_phase,
-    ILOOP_SPECIES_TO_TAXON)
+    ILOOP_SPECIES_TO_TAXON, fluxes_for_phase, gather_for_phases, info_for_samples, model_for_phase,
+    model_options_for_samples, phases_for_samples, scalars_by_phases, theoretical_maximum_yield_for_phase)
 from iloop_to_model.middleware import raven_middleware
 from iloop_to_model.settings import Default
-from iloop_to_model.stubs import *
+from iloop_to_model.stubs import (
+    CurrentOrganismsMessage, ExperimentMessage, ExperimentsMessage, ExperimentsRequestMessage, JSONValue,
+    MaximumYieldMessage, MaximumYieldsMessage, MeasurementMessage, MetaboliteMediumMessage, MetabolitePhasePlaneMessage,
+    ModelMessage, ModelRequestMessage, ModelsMessage, OrganismToTaxonMessage, PhaseMessage, PhasePlaneMessage,
+    PhasePlanesMessage, PhasesMessage, SampleInfoMessage, SampleMessage, SampleModelsMessage, SamplesInfoMessage,
+    SamplesMessage, SamplesRequestMessage)
+
 
 NamedSample = namedtuple('NamedSample', 'pool medium feed_medium operation')
 
@@ -141,7 +145,7 @@ class ExperimentsService(Service):
         iloop = iloop_from_context(self.context)
         experiments = [e for e in iloop.Experiment.instances(where=dict(type='fermentation')) if
                        request.taxon_code in {ILOOP_SPECIES_TO_TAXON[s.strain.organism.short_code] for s in
-                                                 e.read_samples()}]
+                       e.read_samples()}]
         return ExperimentsMessage([ExperimentMessage(id=experiment.id, name=experiment.identifier)
                                    for experiment in experiments])
 

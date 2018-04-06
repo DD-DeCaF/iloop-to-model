@@ -331,13 +331,13 @@ def tmy_to_dict(data):
     # TODO: replace with compatible message from the model service
     if not data:
         return data
-    u, l = 'objective_upper_bound', 'objective_lower_bound'
-    o = list(set(data.keys()) - {u, l})[0]
+    upper, lower = 'objective_upper_bound', 'objective_lower_bound'
+    objective = list(set(data.keys()) - {upper, lower})[0]
     return dict(
-        objective_upper_bound=data[u],
-        objective_lower_bound=data[l],
-        objective=data[o],
-        objective_id=o,
+        objective_upper_bound=data[upper],
+        objective_lower_bound=data[lower],
+        objective=data[objective],
+        objective_id=objective,
     )
 
 
