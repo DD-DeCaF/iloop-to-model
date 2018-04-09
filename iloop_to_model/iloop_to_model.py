@@ -408,7 +408,8 @@ async def model_json(model_id, adjust_message, with_fluxes=True, method=None, ma
 async def model_for_phase(samples, scalars, with_fluxes=True, method=None, map=None, model_id=None, objective=None):
     if model_id is None:
         model_id = sample_model_id(samples[0])
-    return await model_json(model_id, message_for_adjust(samples, scalars, objective), with_fluxes=with_fluxes, method=method,
+    return await model_json(model_id, message_for_adjust(samples, scalars, objective), with_fluxes=with_fluxes,
+                            method=method,
                             map=map)
 
 
