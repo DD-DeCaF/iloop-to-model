@@ -37,6 +37,11 @@ class TestUM:
             'withFluxes': True,
             'method': 'pfba',
             'modelId': 'iJO1366',
+        }
+        payload_objective = {
+            'sampleIds': self.sample_ids,
+            'phaseId': 1,
+            'modelId': 'iJO1366',
             'objective': 'EX_etoh_e',
         }
         get_queries = {
@@ -46,17 +51,18 @@ class TestUM:
             '/experiments/{}'.format(self.taxon_code),
             '/experiments/{}/samples'.format(self.experiment.id),
         }
-        post_queries = {
-            '/samples/phases': payload,
-            '/samples/model-options': payload,
-            '/samples/info': payload,
-            '/data-adjusted/model': payload,
-            '/data-adjusted/fluxes': payload,
-            '/data-adjusted/maximum-yield': payload
-        }
+        post_queries = [
+            ('/samples/phases', payload),
+            ('/samples/phases', payload_objective),
+            ('/samples/model-options', payload),
+            ('/samples/info', payload),
+            ('/data-adjusted/model', payload),
+            ('/data-adjusted/fluxes', payload),
+            ('/data-adjusted/maximum-yield', payload),
+        ]
         for url in get_queries:
             r = requests.get(self.api + url)
             r.raise_for_status()
-        for url, payload in post_queries.items():
+        for url, payload in post_queries:
             r = requests.post(self.api + url, json=payload)
             r.raise_for_status()

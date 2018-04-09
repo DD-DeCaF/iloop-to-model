@@ -204,6 +204,7 @@ def message_for_adjust(samples, scalars=None, objective=None):
 
     :param samples: list of ILoop sample object that make up a group of replicates, of same genotype, same medium.
     :param scalars: scalars for particular phase
+    :param objective: str, objective reaction ID to be set to the model
     :return: dict
     """
     sample = samples[0]
