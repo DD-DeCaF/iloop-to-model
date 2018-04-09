@@ -176,6 +176,7 @@ def extract_measurements_for_phase(scalars_for_samples):
 GENOTYPE_CHANGES = 'genotype-changes'
 MEDIUM = 'medium'
 MEASUREMENTS = 'measurements'
+OBJECTIVE = 'objective'
 REACTIONS = 'reactions-knockout'
 MODEL = 'model'
 GROWTH_RATE = 'growth-rate'
@@ -197,12 +198,13 @@ def add_dioxygen_to_medium(medium):
     medium.append({'id': 'chebi:10745', 'name': 'dioxygen'})
 
 
-def message_for_adjust(samples, scalars=None):
+def message_for_adjust(samples, scalars=None, objective=None):
     """Extract information about genotype changes, medium definitions and measurements if scalars are given
     If no phase is given, do not add measurements.
 
     :param samples: list of ILoop sample object that make up a group of replicates, of same genotype, same medium.
     :param scalars: scalars for particular phase
+    :param objective: str, objective reaction ID to be set to the model
     :return: dict
     """
     sample = samples[0]
@@ -215,11 +217,14 @@ def message_for_adjust(samples, scalars=None):
     logger.info('Medium for sample {} are ready'.format(sample_names))
     measurements = extract_measurements_for_phase(scalars) if scalars else []
     logger.info('Measurements for sample {} are ready'.format(sample_names))
-    return {
+    message = {
         GENOTYPE_CHANGES: genotype_changes,
         MEDIUM: medium,
         MEASUREMENTS: measurements,
     }
+    if objective:
+        message[OBJECTIVE] = objective
+    return message
 
 
 ILOOP_SPECIES_TO_TAXON = {
@@ -306,10 +311,10 @@ async def gather_for_phases(samples, function):
     return dict(zip(phases, result))
 
 
-async def fluxes_for_phase(samples, scalars, method=None, map=None, model_id=None):
+async def fluxes_for_phase(samples, scalars, method=None, map=None, model_id=None, objective=None):
     if model_id is None:
         model_id = sample_model_id(samples[0])
-    return await fluxes(model_id, message_for_adjust(samples, scalars), method=method, map=map)
+    return await fluxes(model_id, message_for_adjust(samples, scalars, objective), method=method, map=map)
 
 
 async def tmy(model_id, adjust_message, objectives):
@@ -400,10 +405,11 @@ async def model_json(model_id, adjust_message, with_fluxes=True, method=None, ma
     return await _call_with_return(model_id, adjust_message, return_message)
 
 
-async def model_for_phase(samples, scalars, with_fluxes=True, method=None, map=None, model_id=None):
+async def model_for_phase(samples, scalars, with_fluxes=True, method=None, map=None, model_id=None, objective=None):
     if model_id is None:
         model_id = sample_model_id(samples[0])
-    return await model_json(model_id, message_for_adjust(samples, scalars), with_fluxes=with_fluxes, method=method,
+    return await model_json(model_id, message_for_adjust(samples, scalars, objective), with_fluxes=with_fluxes,
+                            method=method,
                             map=map)
 
 

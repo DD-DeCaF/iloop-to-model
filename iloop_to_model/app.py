@@ -252,7 +252,8 @@ class DataAdjustedService(Service):
                 samples, scalars,
                 method=request.method,
                 map=request.map,
-                model_id=request.model_id
+                model_id=request.model_id,
+                objective=request.objective
             )
         )
         return ModelsMessage(response={k: ModelMessage(**v) for k, v in result.items()})
@@ -267,7 +268,7 @@ class DataAdjustedService(Service):
                                                   samples, scalars,
                                                   with_fluxes=request.with_fluxes,
                                                   method=request.method, map=request.map,
-                                                  model_id=request.model_id))
+                                                  model_id=request.model_id, objective=request.objective))
         return ModelsMessage(response={k: ModelMessage(
             model=JSONValue(v['model']),
             model_id=v['model_id'],
