@@ -23,13 +23,13 @@ from venom.rpc.comms.aiohttp import create_app
 from venom.rpc.method import http
 from venom.rpc.reflect.service import ReflectService
 
-from src.iloop_to_model import iloop_client, logger
-from src.iloop_to_model.iloop_to_model import (
+from iloop_to_model import iloop_client, logger
+from iloop_to_model.iloop_to_model import (
     ILOOP_SPECIES_TO_TAXON, fluxes_for_phase, gather_for_phases, info_for_samples, model_for_phase,
     model_options_for_samples, phases_for_samples, scalars_by_phases, theoretical_maximum_yield_for_phase)
-from src.iloop_to_model.middleware import raven_middleware
-from src.iloop_to_model.settings import Default
-from src.iloop_to_model.stubs import (
+from iloop_to_model.middleware import raven_middleware
+from iloop_to_model.settings import Default
+from iloop_to_model.stubs import (
     CurrentOrganismsMessage, ExperimentMessage, ExperimentsMessage, ExperimentsRequestMessage, JSONValue,
     MaximumYieldMessage, MaximumYieldsMessage, MeasurementMessage, MetaboliteMediumMessage, MetabolitePhasePlaneMessage,
     ModelMessage, ModelRequestMessage, ModelsMessage, OrganismToTaxonMessage, PhaseMessage, PhasePlaneMessage,

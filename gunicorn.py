@@ -19,7 +19,7 @@ import os
 
 _config = os.environ["ENVIRONMENT"]
 
-bind = "0.0.0.0:8000"
+bind = "0.0.0.0:7000"
 worker_class = "aiohttp.worker.GunicornWebWorker"
 timeout = 20
 accesslog = "-"

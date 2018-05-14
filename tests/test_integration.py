@@ -14,7 +14,7 @@
 
 import pytest
 
-from src.iloop_to_model import fluxes, make_request, model_json, tmy
+from iloop_to_model.iloop_to_model import fluxes, make_request, model_json, tmy
 
 
 @pytest.mark.asyncio
