@@ -23,13 +23,13 @@ from venom.rpc.comms.aiohttp import create_app
 from venom.rpc.method import http
 from venom.rpc.reflect.service import ReflectService
 
-from iloop_to_model import iloop_client, logger
-from iloop_to_model.iloop_to_model import (
+from src.iloop_to_model import iloop_client, logger
+from src.iloop_to_model.iloop_to_model import (
     ILOOP_SPECIES_TO_TAXON, fluxes_for_phase, gather_for_phases, info_for_samples, model_for_phase,
     model_options_for_samples, phases_for_samples, scalars_by_phases, theoretical_maximum_yield_for_phase)
-from iloop_to_model.middleware import raven_middleware
-from iloop_to_model.settings import Default
-from iloop_to_model.stubs import (
+from src.iloop_to_model.middleware import raven_middleware
+from src.iloop_to_model.settings import Default
+from src.iloop_to_model.stubs import (
     CurrentOrganismsMessage, ExperimentMessage, ExperimentsMessage, ExperimentsRequestMessage, JSONValue,
     MaximumYieldMessage, MaximumYieldsMessage, MeasurementMessage, MetaboliteMediumMessage, MetabolitePhasePlaneMessage,
     ModelMessage, ModelRequestMessage, ModelsMessage, OrganismToTaxonMessage, PhaseMessage, PhasePlaneMessage,
@@ -275,26 +275,27 @@ class DataAdjustedService(Service):
             fluxes=v.get('fluxes')
         ) for k, v in result.items()})
 
+def get_app():
+    venom = Venom(version='0.1.0', title='ILoop To Model')
+    venom.add(SpeciesService)
+    venom.add(ExperimentsService)
+    venom.add(SamplesService)
+    venom.add(DataAdjustedService)
+    venom.add(ReflectService)
+    app = create_app(venom, web.Application(middlewares=[raven_middleware]))
+    # Configure default CORS settings.
+    cors = aiohttp_cors.setup(app, defaults={
+        "*": aiohttp_cors.ResourceOptions(
+            expose_headers="*",
+            allow_headers="*",
+            allow_credentials=True,
+        )
+    })
 
-venom = Venom(version='0.1.0', title='ILoop To Model')
-venom.add(SpeciesService)
-venom.add(ExperimentsService)
-venom.add(SamplesService)
-venom.add(DataAdjustedService)
-venom.add(ReflectService)
-app = create_app(venom, web.Application(middlewares=[raven_middleware]))
-# Configure default CORS settings.
-cors = aiohttp_cors.setup(app, defaults={
-    "*": aiohttp_cors.ResourceOptions(
-        expose_headers="*",
-        allow_headers="*",
-        allow_credentials=True,
-    )
-})
-
-# Configure CORS on all routes.
-for route in list(app.router.routes()):
-    cors.add(route)
+    # Configure CORS on all routes.
+    for route in list(app.router.routes()):
+        cors.add(route)
+    return app
 
 
 async def start(loop):

@@ -1,0 +1,78 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: iloop-to-model-production
+spec:
+  selector:
+    matchLabels:
+      app: iloop-to-model
+      env: production
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: iloop-to-model
+        env: production
+    spec:
+      containers:
+      - name: web
+        image: gcr.io/dd-decaf-cfbf6/iloop-to-model:master
+        ports:
+        - containerPort: 8000
+        env:
+        - name: ILOOP_API
+          value: https://data.dd-decaf.eu/api
+        - name: MODEL_API
+          value: https://api.dd-decaf.eu
+        - name: SENTRY_DSN
+          valueFrom:
+            secretKeyRef:
+              name: iloop-to-model-production
+              key: SENTRY_DSN
+        - name: ILOOP_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: iloop-to-model-production
+              key: ILOOP_TOKEN
+        command: ["gunicorn", "-w", "4", "-b", "0.0.0.0:7000", "-t", "150", "-k", "aiohttp.worker.GunicornWebWorker", "iloop_to_model.app:app"]
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: iloop-to-model-staging
+spec:
+  selector:
+    matchLabels:
+      app: iloop-to-model
+      env: staging
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: iloop-to-model
+        env: staging
+    spec:
+      containers:
+      - name: web
+        image: gcr.io/dd-decaf-cfbf6/iloop-to-model:devel
+        ports:
+        - containerPort: 8000
+        env:
+        - name: ILOOP_API
+          value: https://iloop-staging.dd-decaf.eu/api
+        - name: MODEL_API
+          value: https://api-staging.dd-decaf.eu
+        - name: SENTRY_DSN
+          valueFrom:
+            secretKeyRef:
+              name: iloop-to-model-production
+              key: SENTRY_DSN
+        - name: ILOOP_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: iloop-to-model-production
+              key: ILOOP_TOKEN
+        command: ["gunicorn", "-w", "4", "-b", "0.0.0.0:7000", "-t", "150", "-k", "aiohttp.worker.GunicornWebWorker", "iloop_to_model.app:app"]
+

@@ -20,8 +20,8 @@ from itertools import chain
 
 import aiohttp
 
-from iloop_to_model import logger
-from iloop_to_model.settings import Default
+from src.iloop_to_model import logger
+from src.iloop_to_model.settings import Default
 
 
 def pool_lineage(pool):

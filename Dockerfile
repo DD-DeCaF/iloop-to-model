@@ -12,9 +12,12 @@ COPY requirements.txt /tmp/requirements.txt
 RUN pip install --upgrade --process-dependency-links -r /tmp/requirements.txt && \
     rm -rf /root/.cache /tmp/* /var/tmp/*
 
-ADD . ./iloop-to-model
-WORKDIR iloop-to-model
 
-ENV PYTHONPATH $PYTHONPATH:/iloop-to-model
+ARG CWD=/app
+WORKDIR "${CWD}/"
+
+ENV PYTHONPATH=${CWD}/src
+
+COPY . "${CWD}/"
 
 CMD ["gunicorn", "-w", "4", "-b", "0.0.0.0:7000", "-t", "150", "-k", "aiohttp.worker.GunicornWebWorker", "iloop_to_model.app:app"]

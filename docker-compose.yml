@@ -1,25 +1,27 @@
-version: "2.1"
+version: "3.1"
 services:
   web:
     build:
       context: .
       dockerfile: Dockerfile
+    image: gcr.io/dd-decaf-cfbf6/iloop-to-model:${IMAGE_TAG:-latest}
     ports:
       - "${ILOOP_TO_MODEL_PORT:-7000}:7000"
     volumes:
-      - '.:/iloop-to-model'
+      - .:/app
     environment:
       - PYTHONUNBUFFERED=1
       - PYTHONASYNCIODEBUG=1
+      - ENVIRONMENT=development
       - ILOOP_TOKEN
       - ILOOP_API=${ILOOP_API:-http://iloop-backend:80/api}
       - MODEL_API=${MODEL_API:-http://model-backend:8000}
-    command: ["gunicorn", "-w", "1", "-b", "0.0.0.0:7000", "-t", "150", "-k", "aiohttp.worker.GunicornWebWorker", "--reload", "iloop_to_model.app:app"]
+    command: gunicorn -c gunicorn.py iloop_to_model.app:get_app()
     networks:
-      iloop:
+      DD-DeCaF:
         aliases:
-          - iloop-to-model-backend
+          - iloop-to-model
 
 networks:
-  iloop:
+  DD-DeCaF:
     external: true

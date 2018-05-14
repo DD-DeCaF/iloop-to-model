@@ -10,8 +10,8 @@ Setup is as easy as typing `make start` in the project
 directory. However, the DD-DeCaF upload service depends on a running
 instance of the iloop backend. By default it expects a service
 `iloop-backend` to accept connections on port `80`, and
-`model-backend` on port 8000, on a docker network called
-`iloop-net`. You also need to set the `ILOOP_TOKEN` in your `.env`
+`model` on port 8000, on a docker network called
+`DD-DeCaF`. You also need to set the `ILOOP_TOKEN` in your `.env`
 file (where you can also overide other variables) as this is specific
 for your specific user.
 
@@ -22,7 +22,13 @@ for your specific user.
 | ``ILOOP_API``           | ``http://iloop-backend:80/api`` | URL and port for the iloop service.                                                                                    |
 | ``ILOOP_TOKEN``         | ``''``                          | Token for the service to  connect to the iloop backend. (Not necessary if connecting  via the metabolica-ui-frontend.) |
 | ``MODEL_API``           | ``http://model-backend:80/api`` | URL port of the model service.                                                                                         |
+| ``ENVIRONMENT``         | ``development``                 | Set to either `development`, `testing`, or `production`                                                                                 |
+| ``SENTRY_DSN``          | ``''``                          | DSN for reporting exceptions to [Sentry](https://docs.sentry.io/clients/python/integrations/flask/).                                                                                 |
 
 ## Usage
 
 Type ``make`` in order to see all commonly used commands.
+
+### Testing
+
+To run all tests and QA checks, run `make qa`.

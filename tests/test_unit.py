@@ -16,8 +16,8 @@ from collections import namedtuple
 
 import pytest
 
-from iloop_to_model.app import name_groups
-from iloop_to_model.iloop_to_model import (
+from src.iloop_to_model import name_groups
+from src.iloop_to_model import (
     MEASUREMENTS, MEDIUM, extract_genotype_changes, message_for_adjust, phases_for_samples, scalars_by_phases)
 
 

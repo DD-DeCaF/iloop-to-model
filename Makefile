@@ -1,4 +1,4 @@
-.PHONY: start qa test flake8 isort isort-save license stop clean logs
+.PHONY: start qa test flake8 isort isort-save license stop clean logs test-travis setup network
 
 #################################################################################
 # GLOBALS                                                                       #
@@ -15,6 +15,15 @@ PROJECT_DIR := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 start:
 	docker network inspect iloop || docker network create iloop
 	docker-compose up -d --build
+
+## Run all initialization targets.
+setup: network
+
+## Create the docker bridge network if necessary.
+network:
+	docker network inspect DD-DeCaF >/dev/null 2>&1 || \
+		docker network create DD-DeCaF
+
 
 ## Run all QA targets
 qa: test flake8 isort license
@@ -50,6 +59,11 @@ stop:
 clean:
 	docker-compose down
 
+## Run the tests and report coverage (see https://docs.codecov.io/docs/testing-with-docker).
+test-travis:
+	$(eval ci_env=$(shell bash <(curl -s https://codecov.io/env)))
+	docker-compose run --rm $(ci_env) web \
+		/bin/sh -c "pytest -s --cov=src/model tests && codecov"
 
 ## Read the logs.
 logs:
