@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import requests
 from aiohttp.test_utils import AioHTTPTestCase, unittest_run_loop
 
 from iloop_to_model import iloop_client

@@ -275,6 +275,7 @@ class DataAdjustedService(Service):
             fluxes=v.get('fluxes')
         ) for k, v in result.items()})
 
+
 def get_app():
     venom = Venom(version='0.1.0', title='ILoop To Model')
     venom.add(SpeciesService)
@@ -299,6 +300,7 @@ def get_app():
 
 
 async def start(loop):
+    app = get_app()
     await loop.create_server(app.make_handler(), '0.0.0.0', 7000)
     logger.info('Web server is up')
 

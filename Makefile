@@ -36,19 +36,19 @@ test: start
 
 ## Run flake8
 flake8:
-	docker-compose run --rm web flake8 iloop_to_model tests
+	docker-compose run --rm web flake8 src/iloop_to_model tests
 
 ## Check import sorting
 isort:
-	docker-compose run --rm web isort --check-only --recursive iloop_to_model tests
+	docker-compose run --rm web isort --check-only --recursive src/iloop_to_model tests
 
 ## Sort imports and write changes to files
 isort-save:
-	docker-compose run --rm web isort --recursive iloop_to_model tests
+	docker-compose run --rm web isort --recursive src/iloop_to_model tests
 
 ## Verify license headers in source files
 license:
-	./scripts/verify_license_headers.sh iloop_to_model tests
+	./scripts/verify_license_headers.sh src/iloop_to_model tests
 
 ## Shut down the Docker containers.
 stop:
