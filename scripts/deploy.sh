@@ -17,9 +17,9 @@
 set -xeu
 
 if [ "${TRAVIS_BRANCH}" = "master" ]; then
-  DEPLOYMENT=model-production
+  DEPLOYMENT=iloop-to-model-production
 elif [ "${TRAVIS_BRANCH}" = "devel" ]; then
-  DEPLOYMENT=model-staging
+  DEPLOYMENT=iloop-to-model-staging
 else
   echo "Skipping deployment for branch ${TRAVIS_BRANCH}"
   exit 0

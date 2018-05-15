@@ -1,7 +1,7 @@
 apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
-  name: iloop-to-model-production
+  name: iloop-to-model
   annotations:
     nginx.ingress.kubernetes.io/rewrite-target: /
 spec:
