@@ -12,8 +12,7 @@ PROJECT_DIR := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 #################################################################################
 
 ## Install and start the model service.
-start:
-	docker network inspect iloop || docker network create iloop
+start: network
 	docker-compose up -d --build
 
 ## Run all initialization targets.
@@ -63,7 +62,7 @@ clean:
 test-travis:
 	$(eval ci_env=$(shell bash <(curl -s https://codecov.io/env)))
 	docker-compose run --rm $(ci_env) web \
-		/bin/sh -c "pytest -s --cov=src/model tests && codecov"
+		/bin/sh -c "pytest -s --cov=src/iloop_to_model tests && codecov"
 
 ## Read the logs.
 logs:
