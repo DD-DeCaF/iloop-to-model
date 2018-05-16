@@ -69,7 +69,7 @@ class EndToEndTestCase(AioHTTPTestCase):
         for url in get_queries:
             r = await self.client.get(url)
             r.raise_for_status()
-        for url, payload in post_queries.items():
+        for url, payload in post_queries:
             r = await self.client.post(url, json=payload)
             r.raise_for_status()
 
