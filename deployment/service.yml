@@ -1,0 +1,33 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: iloop-to-model-production
+  annotations:
+    prometheus.io/probe: "true"
+spec:
+  selector:
+    app: iloop-to-model
+    env: production
+  ports:
+  - name: web
+    protocol: TCP
+    port: 80
+    targetPort: 7000
+
+---
+
+kind: Service
+apiVersion: v1
+metadata:
+  name: iloop-to-model-staging
+  annotations:
+    prometheus.io/probe: "true"
+spec:
+  selector:
+    app: iloop-to-model
+    env: staging
+  ports:
+  - name: web
+    protocol: TCP
+    port: 80
+    targetPort: 7000

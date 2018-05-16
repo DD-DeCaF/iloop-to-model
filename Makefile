@@ -1,4 +1,4 @@
-.PHONY: start qa test flake8 isort isort-save license stop clean logs
+.PHONY: start qa test flake8 isort isort-save license stop clean logs test-travis setup network
 
 #################################################################################
 # GLOBALS                                                                       #
@@ -12,9 +12,17 @@ PROJECT_DIR := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 #################################################################################
 
 ## Install and start the model service.
-start:
-	docker network inspect iloop || docker network create iloop
+start: network
 	docker-compose up -d --build
+
+## Run all initialization targets.
+setup: network
+
+## Create the docker bridge network if necessary.
+network:
+	docker network inspect DD-DeCaF >/dev/null 2>&1 || \
+		docker network create DD-DeCaF
+
 
 ## Run all QA targets
 qa: test flake8 isort license
@@ -28,19 +36,19 @@ test: start
 
 ## Run flake8
 flake8:
-	docker-compose run --rm web flake8 iloop_to_model tests
+	docker-compose run --rm web flake8 src/iloop_to_model tests
 
 ## Check import sorting
 isort:
-	docker-compose run --rm web isort --check-only --recursive iloop_to_model tests
+	docker-compose run --rm web isort --check-only --recursive src/iloop_to_model tests
 
 ## Sort imports and write changes to files
 isort-save:
-	docker-compose run --rm web isort --recursive iloop_to_model tests
+	docker-compose run --rm web isort --recursive src/iloop_to_model tests
 
 ## Verify license headers in source files
 license:
-	./scripts/verify_license_headers.sh iloop_to_model tests
+	./scripts/verify_license_headers.sh src/iloop_to_model tests
 
 ## Shut down the Docker containers.
 stop:
@@ -50,6 +58,11 @@ stop:
 clean:
 	docker-compose down
 
+## Run the tests and report coverage (see https://docs.codecov.io/docs/testing-with-docker).
+test-travis:
+	$(eval ci_env=$(shell bash <(curl -s https://codecov.io/env)))
+	docker-compose run --rm $(ci_env) web \
+		/bin/sh -c "pytest -s --cov=src/iloop_to_model tests && codecov"
 
 ## Read the logs.
 logs:

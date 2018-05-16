@@ -277,28 +277,31 @@ class DataAdjustedService(Service):
         ) for k, v in result.items()})
 
 
-venom = Venom(version='0.1.0', title='ILoop To Model')
-venom.add(SpeciesService)
-venom.add(ExperimentsService)
-venom.add(SamplesService)
-venom.add(DataAdjustedService)
-venom.add(ReflectService)
-app = create_app(venom, web.Application(middlewares=[raven_middleware]))
-# Configure default CORS settings.
-cors = aiohttp_cors.setup(app, defaults={
-    "*": aiohttp_cors.ResourceOptions(
-        expose_headers="*",
-        allow_headers="*",
-        allow_credentials=True,
-    )
-})
+def get_app():
+    venom = Venom(version='0.1.0', title='ILoop To Model')
+    venom.add(SpeciesService)
+    venom.add(ExperimentsService)
+    venom.add(SamplesService)
+    venom.add(DataAdjustedService)
+    venom.add(ReflectService)
+    app = create_app(venom, web.Application(middlewares=[raven_middleware]))
+    # Configure default CORS settings.
+    cors = aiohttp_cors.setup(app, defaults={
+        "*": aiohttp_cors.ResourceOptions(
+            expose_headers="*",
+            allow_headers="*",
+            allow_credentials=True,
+        )
+    })
 
-# Configure CORS on all routes.
-for route in list(app.router.routes()):
-    cors.add(route)
+    # Configure CORS on all routes.
+    for route in list(app.router.routes()):
+        cors.add(route)
+    return app
 
 
 async def start(loop):
+    app = get_app()
     await loop.create_server(app.make_handler(), '0.0.0.0', 7000)
     logger.info('Web server is up')
 
