@@ -45,10 +45,6 @@ def iloop_from_context(context):
     api, token = Default.ILOOP_API, Default.ILOOP_TOKEN
     if 'Authorization' in headers:
         token = headers['Authorization'].replace('Bearer ', '')
-        if 'Origin' in headers:
-            for origin, redirect_api in Default.REDIRECTS.items():
-                if origin in headers['Origin']:
-                    api = redirect_api
     return iloop_client(api, token)
 
 
