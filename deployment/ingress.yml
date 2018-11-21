@@ -9,7 +9,6 @@ spec:
   tls:
   - hosts:
     - api.dd-decaf.eu
-    - api-staging.dd-decaf.eu
     secretName: decaf-tls
   rules:
   - host: api.dd-decaf.eu
@@ -18,11 +17,4 @@ spec:
       - path: /iloop-to-model
         backend:
           serviceName: iloop-to-model-production
-          servicePort: 80
-  - host: api-staging.dd-decaf.eu
-    http:
-      paths:
-      - path: /iloop-to-model
-        backend:
-          serviceName: iloop-to-model-staging
           servicePort: 80

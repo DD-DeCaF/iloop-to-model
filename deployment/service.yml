@@ -11,19 +11,3 @@ spec:
     protocol: TCP
     port: 80
     targetPort: 7000
-
----
-
-kind: Service
-apiVersion: v1
-metadata:
-  name: iloop-to-model-staging
-spec:
-  selector:
-    app: iloop-to-model
-    env: staging
-  ports:
-  - name: web
-    protocol: TCP
-    port: 80
-    targetPort: 7000
