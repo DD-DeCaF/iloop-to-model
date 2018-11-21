@@ -65,7 +65,7 @@ async def sample_in_phases_venom(request, iloop, function_for_phase):
 
 class SpeciesService(Service):
     class Meta:
-        name = 'species'
+        name = 'iloop-to-model/species'
 
     @http.GET('.', description='Organism short codes to taxons')
     async def species(self) -> OrganismToTaxonMessage:
@@ -127,7 +127,7 @@ def name_groups(grouped_samples, unique_keys, names):
 
 class ExperimentsService(Service):
     class Meta:
-        name = 'experiments'
+        name = 'iloop-to-model/experiments'
 
     @http.GET('.', description='List of experiments')
     async def experiments(self) -> ExperimentsMessage:
@@ -186,7 +186,7 @@ def merge_duplicated_metabolites(medium):
 
 class SamplesService(Service):
     class Meta:
-        name = 'samples'
+        name = 'iloop-to-model/samples'
 
     @http.POST('./phases', description='Phases for the given list of samples')
     async def list_phases(self, request: ModelRequestMessage) -> PhasesMessage:
@@ -216,7 +216,7 @@ class SamplesService(Service):
 
 class DataAdjustedService(Service):
     class Meta:
-        name = 'data-adjusted'
+        name = 'iloop-to-model/data-adjusted'
 
     @http.POST('./maximum-yield', description='Calculate maximum yield for given model and sample list')
     async def sample_maximum_yields(self, request: ModelRequestMessage) -> MaximumYieldsMessage:
