@@ -22,7 +22,7 @@ from iloop_to_model.settings import Default
 
 class EndToEndTestCase(AioHTTPTestCase):
     def setup(self):
-        self.api = 'http://localhost:7000'
+        self.api = 'http://localhost:7000/iloop-to-model'
         self.iloop = iloop_client(Default.ILOOP_API, Default.ILOOP_TOKEN)
         self.experiment = self.iloop.Experiment.instances(where={'type': 'fermentation'})[0]
         samples = self.experiment.read_samples()
