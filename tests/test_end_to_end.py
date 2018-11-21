@@ -22,7 +22,7 @@ from iloop_to_model.settings import Default
 
 class EndToEndTestCase(AioHTTPTestCase):
     def setup(self):
-        self.api = 'http://localhost:7000/iloop-to-model'
+        self.api = 'http://localhost:7000'
         self.iloop = iloop_client(Default.ILOOP_API, Default.ILOOP_TOKEN)
         self.experiment = self.iloop.Experiment.instances(where={'type': 'fermentation'})[0]
         samples = self.experiment.read_samples()
@@ -51,20 +51,20 @@ class EndToEndTestCase(AioHTTPTestCase):
             'objective': 'EX_etoh_e',
         }
         get_queries = {
-            '/species',
-            '/species/current',
-            '/experiments',
-            '/experiments/{}'.format(self.taxon_code),
-            '/experiments/{}/samples'.format(self.experiment.id),
+            '/iloop-to-model/species',
+            '/iloop-to-model/species/current',
+            '/iloop-to-model/experiments',
+            '/iloop-to-model/experiments/{}'.format(self.taxon_code),
+            '/iloop-to-model/experiments/{}/samples'.format(self.experiment.id),
         }
         post_queries = [
-            ('/samples/phases', payload),
-            ('/samples/phases', payload_objective),
-            ('/samples/model-options', payload),
-            ('/samples/info', payload),
-            ('/data-adjusted/model', payload),
-            ('/data-adjusted/fluxes', payload),
-            ('/data-adjusted/maximum-yield', payload),
+            ('/iloop-to-model/samples/phases', payload),
+            ('/iloop-to-model/samples/phases', payload_objective),
+            ('/iloop-to-model/samples/model-options', payload),
+            ('/iloop-to-model/samples/info', payload),
+            ('/iloop-to-model/data-adjusted/model', payload),
+            ('/iloop-to-model/data-adjusted/fluxes', payload),
+            ('/iloop-to-model/data-adjusted/maximum-yield', payload),
         ]
         for url in get_queries:
             r = await self.client.get(url)
