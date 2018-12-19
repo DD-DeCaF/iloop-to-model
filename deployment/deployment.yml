@@ -36,7 +36,6 @@ spec:
               key: ILOOP_TOKEN
         command: ["gunicorn", "-w", "4", "-b", "0.0.0.0:7000", "-t", "150", "-k", "aiohttp.worker.GunicornWebWorker", "iloop_to_model.app:get_app()"]
         resources:
-          requests:
-            cpu: "10m"
           limits:
             cpu: "1000m"
+            memory: "256Mi"
