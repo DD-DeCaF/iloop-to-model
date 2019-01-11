@@ -23,7 +23,7 @@ spec:
         - name: ILOOP_API
           value: http://iloop-production/api
         - name: MODEL_API
-          value: http://model-production
+          value: http://model-legacy
         - name: SENTRY_DSN
           valueFrom:
             secretKeyRef:
